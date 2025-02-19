@@ -1,0 +1,55 @@
+---
+title: "Untitled"
+format: pdf
+editor: visual
+---
+
+## Introduction
+
+Columns which may need clarification are shown below:
+
++------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Column name                              | Meaning                                                                                                                                                                                                                                                                                                 |
++==========================================+=========================================================================================================================================================================================================================================================================================================+
+| `Life Ladder`                            | The national average response to the question of life evaluations.\                                                                                                                                                                                                                                     |
+|                                          | 0 at the bottom to 10 at the top.                                                                                                                                                                                                                                                                       |
++------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| `Social support`                         | Having someone to count on in times of trouble.\                                                                                                                                                                                                                                                        |
+|                                          | This is the national average of the binary responses.                                                                                                                                                                                                                                                   |
++------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| `Healthy life expectancy at birth (HLE)` | The data at the source are available for the years 2000, 2010, 2015 and 2019. To match this report’s sample period (2005-2021), interpolation and extrapolation are used.                                                                                                                               |
++------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| `Freedom to make life choices`           | The national average of responses to the question “Are you satisfied or dissatisfied with your freedom to choose what you do with your life?”                                                                                                                                                           |
++------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| `Generosity`                             | The residual of regressing national average of response to the GWP question “Have you donated money to a charity in the past month?” on GDP per capita.                                                                                                                                                 |
++------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| `Perceptions of corruption`              | The measure is the national average of the survey responses to two questions “Is corruption widespread throughout the government or not” and “Is corruption widespread within businesses or not?”                                                                                                       |
+|                                          |                                                                                                                                                                                                                                                                                                         |
+|                                          | The overall perception is just the average of the two responses.                                                                                                                                                                                                                                        |
++------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| `Positive affect`                        | Defined as the average of three positive affect measures:                                                                                                                                                                                                                                               |
+|                                          |                                                                                                                                                                                                                                                                                                         |
+|                                          | laugh, enjoyment and doing interesting things                                                                                                                                                                                                                                                           |
+|                                          |                                                                                                                                                                                                                                                                                                         |
+|                                          | “Did you smile or laugh a lot yesterday?”, and “Did you experience the following feelings during A LOT OF THE DAY yesterday? How about Enjoyment?”, “Did you learn or do something interesting yesterday?”                                                                                              |
++------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| `Negative affect`                        | Defined as the average of three negative affect measures:                                                                                                                                                                                                                                               |
+|                                          |                                                                                                                                                                                                                                                                                                         |
+|                                          | worry, sadness and anger                                                                                                                                                                                                                                                                                |
+|                                          |                                                                                                                                                                                                                                                                                                         |
+|                                          | “Did you experience the following feelings during A LOT OF THE DAY yesterday? How about Worry?”, “Did you experience the following feelings during A LOT OF THE DAY yesterday? How about Sadness?”, and “Did you experience the following feelings during A LOT OF THE DAY yesterday? How about Anger?” |
++------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+```{r, cache=TRUE}
+data <- read_delim("~/pstat100/final_project/data/historical_emissions/historical_emissions.csv")
+data1 <- read_csv("~/pstat100/final_project/data/world_happiness/whr-2023.csv")
+data
+```
+
+You can add options to executable code like this
+
+```{r}
+data1
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
