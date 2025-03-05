@@ -35,3 +35,46 @@ The NCHS obtains maternal death records from state vital registration offices th
 | `deaths_con` | Number of congenital-related deaths (present at birth) |
 | `deaths_noncon` | Number of non-congenital deaths |
 | `deaths_neo` | Number of neonatal deaths (within first 28 days of life) |
+
+### Fertility
+
+| Variable Name       | Meaning                                            |
+|---------------------|----------------------------------------------------|
+| births_age1524      | Births to mothers aged 15-24                       |
+| births_age2534      | Births to mothers aged 25-34                       |
+| births_age3544      | Births to mothers aged 35-44                       |
+| pop_age1524         | Population aged 15-24 (women age 15-54 population) |
+| pop_age2534         | Population aged 25-34 (women age 15-54 population) |
+| pop_age3544         | Population aged 35-44 (women age 15-54 population) |
+| births_nhblack      | Births to non-Hispanic Black mothers               |
+| births_nhwhite      | Births to non-Hispanic White mothers               |
+| births_hisp         | Births to Hispanic mothers                         |
+| births_otherraceeth | Births to mothers of other races/ethnicities       |
+| births_total        | Total births across all categories                 |
+
+#### Education
+
+| Variable Name | Meaning |
+|-----------------------|-------------------------------------------------|
+| births_nohs | Births to mothers without high school education |
+| births_hs | Births to mothers with high school education |
+| births_somecoll | Births to mothers with some college education |
+| births_coll | Births to mothers with college degree |
+| pop_nohs | Population without high school education (women age 15-54 population) |
+| pop_hs | Population with high school education (women age 15-54 population) |
+| pop_somecoll | Population with some college education (women age 15-54 population) |
+| pop_coll | Population with college degree (women age 15-54 population) |
+
+#### Status
+
+| Variable Name | Meaning |
+|----------------------------|--------------------------------------------|
+| births_married | Births to married mothers |
+| births_unmarried | Births to unmarried mothers |
+| pop_married | Married population (women age 15-54 population) |
+| pop_unmarried | Unmarried population (women age 15-54 population) |
+| births_medicaid | Births covered by Medicaid |
+| births_nonmedicaid | Births not covered by Medicaid |
+| pop_medicaid | Population covered by Medicaid (women age 15-54 population) |
+| pop_nonmedicaid | Population not covered by Medicaid (women age 15-54 population) |
+
