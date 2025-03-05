@@ -20,3 +20,18 @@ The Maternal Mortality dataset provides national-level provisional counts of dea
 The datasets come from the Centers for Disease Control and Prevention (CDC), collected from anywhere a person receives healthcare. This may lead to limitations as it is up to the city, county, and state to decide what information is collected, and how and when it can be shared by the CDC. (<https://archive.cdc.gov/www_cdc_gov/surveillance/data-modernization/basics/where_does_our_data_come_from.html>)  
 
 The NCHS obtains maternal death records from state vital registration offices through the Vital Statistics Cooperative Program. The estimates of maternal mortalities are derived from final mortality data for the years 2019 to 2021, and provisional data for the years 2022 to 2024. Provisional data reflects counts based on reports that are still being processed, while finalized data represents more complete counts of maternal deaths after thorough review and analysis. (Provisional Maternal Death Counts) https://www.cdc.gov/nchs/nvss/vsrr/provisional-maternal-deaths.htm
+
+### Infant mortality
+
+| Variable Name | Meaning |
+|------------------------------------|------------------------------------|
+| `bacode` | Biannual code. 1 means data aggregated from January 1 through June 30, 2 means data from July 1 through December 31. |
+| `births_nhblack` | Number of births to non-Hispanic Black mothers |
+| `births_nhwhite` | Number of births to non-Hispanic White mothers |
+| `births_hisp` | Number of births to Hispanic mothers of any race |
+| `births_otherraceeth` | Number of births to mothers of other races/ethnicities |
+| `births_total` | Total number of births across all racial/ethnic groups |
+| `deaths_hisp` | Number of deaths among Hispanic population of any race |
+| `deaths_con` | Number of congenital-related deaths (present at birth) |
+| `deaths_noncon` | Number of non-congenital deaths |
+| `deaths_neo` | Number of neonatal deaths (within first 28 days of life) |
