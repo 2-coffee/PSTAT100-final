@@ -11,6 +11,28 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(forcats)
+fertility_data <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/fertility_data.csv")
+infant_data <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/infant_mortality_biannual_data.csv")
+maternal_mort <- read_csv("~/Maternal_Death_Counts.csv")
+```
+```{r}
+maternal_mort1 <- maternal_mort |>
+  pivot_wider(names_from=Group, values_from=Subgroup)
+
+maternal_byAge <- maternal_mort1 |> filter(!is.na(Age))
+maternal_byRace <- maternal_mort1 |> filter(!is.na(`Race and Hispanic origin`)) |>
+  rename("RaceEth"=`Race and Hispanic origin`)
+
+head(maternal_byAge)
+head(maternal_byRace)
+okabe <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#D55E00", "#CC79A7")
+
+maternal_byRace |> ggplot(aes(x=`Year of Death`, y=`Maternal Mortality Rate`, color=RaceEth)) +
+  geom_point()
+maternal_byRace |> ggplot(aes(x=`Live Births`, y=`Maternal Deaths`, color=as.factor(`Year of Death`))) +
+  geom_point() + 
+  scale_color_manual(values=okabe)
+
 ```
 
 ```{r}
