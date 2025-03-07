@@ -1,0 +1,91 @@
+---
+title: "EDA"
+format: pdf
+editor: visual
+---
+
+## 
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(forcats)
+```
+
+```{r}
+ggplot(fertility_data, aes(x = year, y = births_total, group = state, color = state)) +
+   geom_point()
+```
+
+```{r}
+fertility_years <- fertility_data %>% 
+  pivot_longer(cols = starts_with("births_age"), names_to = "age_group", values_to = "births")
+ggplot(fertility_years, aes(x = fct_reorder(state, -births), y = births, fill = age_group)) +
+  geom_bar(stat = "identity", position = "stack") + coord_flip()
+
+ggplot(fertility_years, aes(x = year, y = births, color = age_group)) +
+  geom_point()
+```
+
+```{r}
+fertility_edu <- fertility_years %>% 
+  pivot_longer(cols = c("births_nohs", "births_hs", "births_somecoll", "births_coll"), names_to = "edu_backg", values_to = "edu_births")
+
+ggplot(fertility_edu, aes(x = fct_reorder(state, -edu_births), y = edu_births, fill = edu_backg)) +
+  geom_bar(stat = "identity", position = "stack") + coord_flip()
+
+fertility_edu_avg <- fertility_edu %>% 
+  group_by(year, edu_backg) %>% 
+  summarise(avg_births_edu = mean(edu_births, na.rm = TRUE)) %>% 
+  ungroup()
+
+ggplot(fertility_edu, aes(x = year, y = edu_births, color = edu_backg)) +
+ geom_point()
+
+ggplot(fertility_edu_avg, aes(x = year, y = avg_births_edu, color = edu_backg, group = edu_backg)) + geom_point() + geom_line()
+```
+
+```{r}
+fertility_eth <- fertility_edu %>% 
+  pivot_longer(cols = c("births_nhblack", "births_nhwhite", "births_hisp", "births_otherraceeth"), names_to = "ethnicity", values_to = "eth_births")
+
+ggplot(fertility_eth, aes(x = ethnicity, y = eth_births, fill = ethnicity)) +
+  geom_bar(stat = "identity", position = "stack") + coord_flip()
+
+fertility_eth_avg <- fertility_eth %>% 
+  group_by(year, ethnicity) %>% 
+  summarise(avg_births = mean(eth_births, na.rm = TRUE)) %>% 
+  ungroup()
+
+ggplot(fertility_eth_avg, aes(x = year, y = avg_births, color = ethnicity, group = ethnicity)) + geom_point() + geom_line()
+
+ggplot(fertility_eth, aes(x = year, y = eth_births, color = ethnicity)) + geom_point()
+```
+
+```{r}
+fertility_marriage <- fertility_eth %>% 
+  pivot_longer(cols = c("births_married", "births_unmarried"), names_to = "marital_status", values_to = "marital_births")
+
+fertility_mar_avg <- fertility_marriage %>% 
+  group_by(year, marital_status) %>% 
+  summarise(avg_births_mar = mean(marital_births, na.rm = TRUE)) %>% 
+  ungroup()
+
+ggplot(fertility_mar_avg, aes(x = year, y = avg_births_mar, color = marital_status, group = marital_status)) + geom_point() + geom_line()
+```
+
+```{r}
+fertility_medic <- fertility_marriage %>% 
+  pivot_longer(cols = c("births_medicaid", "births_nonmedicaid"), names_to = "health_status", values_to = "births_health")
+
+ggplot(fertility_medic, aes(x = fct_reorder(state, -births_health), y = births_health, fill = health_status)) +
+  geom_bar(stat = "identity", position = "stack") + coord_flip()
+
+fertility_med_avg <- fertility_medic %>% 
+  group_by(year, health_status) %>% 
+  summarise(avg_births_med = mean(births_health, na.rm = TRUE)) %>% 
+  ungroup()
+
+ggplot(fertility_med_avg, aes(x = year, y = avg_births_med, color = health_status, group = health_status)) + geom_point() + geom_line()
+```
