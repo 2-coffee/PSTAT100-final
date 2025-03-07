@@ -21,6 +21,7 @@ ggplot(fertility_data, aes(x = year, y = births_total, group = state, color = st
 ```{r}
 fertility_years <- fertility_data %>% 
   pivot_longer(cols = starts_with("births_age"), names_to = "age_group", values_to = "births")
+
 ggplot(fertility_years, aes(x = fct_reorder(state, -births), y = births, fill = age_group)) +
   geom_bar(stat = "identity", position = "stack") + coord_flip()
 
@@ -88,4 +89,68 @@ fertility_med_avg <- fertility_medic %>%
   ungroup()
 
 ggplot(fertility_med_avg, aes(x = year, y = avg_births_med, color = health_status, group = health_status)) + geom_point() + geom_line()
+```
+
+```{r}
+ggplot(infant_mortality_biannual_data, aes(x = deaths_total)) +
+  geom_histogram(bins = 30)
+```
+
+```{r}
+mortality_ethnicity <- infant_mortality_biannual_data %>% 
+  pivot_longer(cols = c(deaths_nhblack, deaths_nhwhite, deaths_hisp, deaths_otherraceeth), names_to = "Race", values_to = "Deaths")
+
+ggplot(mortality_ethnicity, aes(x = Race, y = Deaths, fill = Race)) + geom_boxplot()
+
+ggplot(mortality_ethnicity, aes(x = Race, y = Deaths, fill = Race)) + geom_bar(stat = "identity")
+```
+
+```{r}
+infant_mortality_biannual_data <- infant_mortality_biannual_data %>% 
+  mutate(deaths_postneo = deaths_total - deaths_neo)
+
+mortality_neo <- infant_mortality_biannual_data %>% 
+  pivot_longer(cols = c(deaths_neo, deaths_postneo), names_to = "Death_type", values_to = "count")
+
+ggplot(mortality_neo, aes(x = year, y = count, fill = Death_type)) +
+  geom_bar(stat = "identity")
+```
+
+```{r}
+mortality_con <- infant_mortality_biannual_data %>% 
+  pivot_longer(cols = c(deaths_con, deaths_noncon), names_to = "Cause", values_to = "con_deaths")
+
+ggplot(mortality_con, aes(x = year, y = con_deaths, fill = Cause)) + geom_bar(stat = "identity", position = "dodge")
+```
+
+```{r}
+mortality_avg <- infant_mortality_biannual_data %>% 
+  group_by(year, state) %>% 
+  summarise(avg_deaths = mean(deaths_total, na.rm = TRUE)) %>% 
+  ungroup()
+
+ggplot(infant_mortality_biannual_data, aes(x = year, y = deaths_total, group = state, color = state)) + geom_line() + geom_point()
+
+infant_mortality_biannual_data <- infant_mortality_biannual_data %>% 
+  mutate(across(c(deaths_nhblack, deaths_nhwhite, deaths_hisp), \(x) replace_na(x, 0)))
+
+mortality <- infant_mortality_biannual_data %>%
+  pivot_longer(cols = c(deaths_nhblack, deaths_nhwhite, deaths_hisp, deaths_otherraceeth), names_to = "Race", values_to = "deaths")
+
+ggplot(mortality, aes(x = fct_reorder(state, -deaths), y = deaths, fill = Race)) +
+  geom_bar(stat = "identity", position = "stack") + coord_flip()
+
+mortality_avg_eth <- mortality_ethnicity %>% 
+  group_by(year, Race) %>% 
+  summarise(avg_deaths = mean(Deaths, na.rm = TRUE)) %>% 
+  ungroup()
+
+ggplot(mortality_avg_eth, aes(x = year, y = avg_deaths, group = Race, color = Race)) + geom_line() + geom_point()
+
+ggplot(mortality, aes(x = year, y = deaths, color = Race, group = Race)) +
+  geom_line() + geom_point()
+```
+
+```{r}
+
 ```
