@@ -11,25 +11,36 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(forcats)
-fertility_data <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/fertility_data.csv")
-infant_data <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/infant_mortality_biannual_data.csv")
-maternal_mort <- read_csv("~/Maternal_Death_Counts.csv")
+library(qtl2)
+library(janitor)
+#fertility_data <- read.csv("~/pstat100/final_project/data/fertility_infant_mortality/fertility_data.csv")
+#infant_data <- read.csv("~/pstat100/final_project/data/fertility_infant_mortality/infant_mortality_biannual_data.csv")
+#maternal_mort <- read.csv("~/Maternal_Death_Counts.csv")
+
+fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv")
+infant_mortality_biannual_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/infant_mortality_biannual_data.csv")
+#maternal_mort <- read.csv("~/Desktop/UCSB/PSTAT100-final/Maternal_Death_Counts.csv")
+maternal_mort <- read.csv("~/Desktop/UCSB/PSTAT100-final/VSRR_Provisional_Maternal_Death_Counts_and_Rates.csv")
 ```
+
 ```{r}
 maternal_mort1 <- maternal_mort |>
-  pivot_wider(names_from=Group, values_from=Subgroup)
+  pivot_wider(names_from= Group, values_from=Subgroup)
 
-maternal_byAge <- maternal_mort1 |> filter(!is.na(Age))
-maternal_byRace <- maternal_mort1 |> filter(!is.na(`Race and Hispanic origin`)) |>
-  rename("RaceEth"=`Race and Hispanic origin`)
+maternal_mort1 <- maternal_mort1 %>% 
+  clean_names()
+
+maternal_byAge <- maternal_mort1 |> filter(!is.na(age))
+maternal_byRace <- maternal_mort1 |> filter(!is.na(race_and_hispanic_origin)) |>
+  rename("RaceEth"=race_and_hispanic_origin)
 
 head(maternal_byAge)
 head(maternal_byRace)
 okabe <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#D55E00", "#CC79A7")
 
-maternal_byRace |> ggplot(aes(x=`Year of Death`, y=`Maternal Mortality Rate`, color=RaceEth)) +
+maternal_byRace |> ggplot(aes(x=year_of_death, y=maternal_mortality_rate, color=RaceEth)) +
   geom_point()
-maternal_byRace |> ggplot(aes(x=`Live Births`, y=`Maternal Deaths`, color=as.factor(`Year of Death`))) +
+maternal_byRace |> ggplot(aes(x=live_births, y=maternal_deaths, color=RaceEth)) +
   geom_point() + 
   scale_color_manual(values=okabe)
 
@@ -99,7 +110,7 @@ ggplot(fertility_mar_avg, aes(x = year, y = avg_births_mar, color = marital_stat
 ```
 
 ```{r}
-fertility_medic <- fertility_marriage %>% 
+fertility_medic <- fertility_data %>% 
   pivot_longer(cols = c("births_medicaid", "births_nonmedicaid"), names_to = "health_status", values_to = "births_health")
 
 ggplot(fertility_medic, aes(x = fct_reorder(state, -births_health), y = births_health, fill = health_status)) +
@@ -111,6 +122,8 @@ fertility_med_avg <- fertility_medic %>%
   ungroup()
 
 ggplot(fertility_med_avg, aes(x = year, y = avg_births_med, color = health_status, group = health_status)) + geom_point() + geom_line()
+
+
 ```
 
 ```{r}
@@ -119,12 +132,15 @@ ggplot(infant_mortality_biannual_data, aes(x = deaths_total)) +
 ```
 
 ```{r}
+#create proportions for everything, regraph 
+#sum bm_code into 2 chunks for fertility
 mortality_ethnicity <- infant_mortality_biannual_data %>% 
-  pivot_longer(cols = c(deaths_nhblack, deaths_nhwhite, deaths_hisp, deaths_otherraceeth), names_to = "Race", values_to = "Deaths")
+  pivot_longer(cols = c(deaths_nhblack, deaths_nhwhite, deaths_hisp, deaths_otherraceeth), names_to = "Race", values_to = "Deaths") %>% 
+  mutate(deaths_prop = Deaths/deaths_total)
 
-ggplot(mortality_ethnicity, aes(x = Race, y = Deaths, fill = Race)) + geom_boxplot()
+ggplot(mortality_ethnicity, aes(x = Race, y = deaths_prop, fill = Race)) + geom_boxplot()
 
-ggplot(mortality_ethnicity, aes(x = Race, y = Deaths, fill = Race)) + geom_bar(stat = "identity")
+ggplot(mortality_ethnicity, aes(x = Race, y = deaths_prop, fill = Race)) + geom_bar(stat = "identity")
 ```
 
 ```{r}
