@@ -1,0 +1,135 @@
+---
+title: "ReorganizeData"
+format: html
+---
+
+```{r, message=FALSE}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(forcats)
+library(janitor)
+
+fertility_data <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/fertility_data.csv")
+infant_data <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/infant_mortality_biannual_data.csv")
+maternal_mort <- read_csv("~/pstat100/final_project/Maternal_Death_Counts.csv")
+```
+
+```{r}
+# Maternal Mortality Rate is calculated as maternalDeaths/LiveBirths * 100,000
+# I think I'll need to split the data into the 3 groups specified: total, age, race/eth
+# Make an indicator variable specifying true if first half of year for each dataframe
+
+maternal_mort1 <- maternal_mort |> select(-c(`Maternal Mortality Rate`,Footnote,`Data As Of`, Jurisdiction, `Time Period`)) |>
+  rename(c("year"=`Year of Death`,"month"=`Month of Death`))
+
+maternal_byAge <- maternal_mort1 |>
+  filter(Group=='Age') |> pivot_wider(names_from=Group, values_from=Subgroup) |>
+  clean_names() |> mutate(bm_code = month %in% seq(7,12))
+
+maternal_byRace <- maternal_mort1 |>
+  filter(Group=='Race and Hispanic origin') |> pivot_wider(names_from=Group, values_from=Subgroup) |>
+  clean_names() |>
+  rename("RaceEth" = race_and_hispanic_origin) |>
+  mutate(bm_code = month %in% seq(7,12))
+
+maternal_Total <- maternal_mort1 |>
+  filter(Group=='Total') |> pivot_wider(names_from=Group, values_from=Subgroup) |>
+  clean_names() |>
+  rename(c("total_maternal_deaths"=maternal_deaths,"total_live_births"=live_births)) |>
+  mutate(bm_code = month %in% seq(7,12))
+
+head(maternal_byAge)
+head(maternal_byRace)
+head(maternal_Total)
+```
+```{r}
+# PLOTS
+maternal_byAge |> ggplot(aes(x=as.factor(month), y=maternal_deaths)) +
+  geom_smooth(aes(x=month, y=maternal_deaths ),method='loess' ) +
+  facet_wrap(vars(age), scale="free")
+
+maternal_byAge |> ggplot(aes(x=as.factor(month), y=maternal_deaths, color=as.factor(year))) +
+  geom_point() + 
+  geom_smooth(aes(x=month, y=maternal_deaths ),method='loess' ) +
+  facet_wrap(vars(age), scale="free")
+
+maternal_byRace |> ggplot(aes(x=live_births, y=maternal_deaths, color=RaceEth)) +
+  geom_point() +
+  geom_smooth(aes(x=live_births, y=maternal_deaths, group=RaceEth), method='lm')
+```
+
+
+```{r, message=FALSE}
+# Group data into bm_code 1 and 2
+
+maternal_byAge1 <- maternal_byAge |> 
+  group_by(year,age,bm_code) |>
+  summarize(maternal_deaths = sum(maternal_deaths), 
+            live_births=sum(live_births)) |> ungroup() |> group_by(year)|>
+  mutate(bm_code = ifelse(bm_code==FALSE,1,2)) |> ungroup() |>
+  pivot_wider(
+    names_from=age,
+    values_from=c(maternal_deaths,live_births)
+  )|> clean_names()
+head(maternal_byAge1)
+
+# group by year and raceEth, then section them by months.
+# replace all NAs with 0
+maternal_byRace1 <- maternal_byRace |>
+  group_by(year,RaceEth,bm_code) |>
+  summarize(maternal_deaths = sum(maternal_deaths), 
+            live_births=sum(live_births)) |> ungroup() |>
+  mutate(maternal_deaths = coalesce(maternal_deaths,0)) |>
+  mutate(bm_code = ifelse(bm_code==FALSE,1,2)) |>
+  pivot_wider(
+    names_from=RaceEth,
+    values_from=c(maternal_deaths,live_births)
+  ) |> clean_names()
+head(maternal_byRace1)
+
+maternal_Total1 <- maternal_Total |>
+  group_by(year,bm_code) |>
+  summarize(total_maternal_deaths = sum(total_maternal_deaths), 
+            total_live_births=sum(total_live_births)) |> ungroup() |>
+  mutate(bm_code = ifelse(bm_code==FALSE,1,2))
+head(maternal_Total1)
+
+```
+
+```{r}
+# make proportions columns
+
+maternal_byAge2 <- maternal_byAge1 |>
+  left_join(maternal_Total1) |>
+  mutate(across(starts_with("maternal_deaths_"), ~ .x/total_maternal_deaths, .names="prop_{.col}")) |>
+  mutate(across(starts_with("live_births_"), ~ .x/total_live_births, .names="prop_{.col}"))
+
+maternal_byAge2 <- maternal_byAge1 |>
+  left_join(maternal_Total1) |>
+  mutate(across(starts_with("maternal_deaths_"), ~ .x/total_maternal_deaths, .names="prop_{.col}")) |>
+  mutate(across(starts_with("live_births_"), ~ .x/total_live_births, .names="prop_{.col}"))
+
+maternal_byRace2 <- maternal_byRace1 |>
+  left_join(maternal_Total1) |>
+  mutate(across(starts_with("maternal_deaths_"), ~ .x/total_maternal_deaths, .names="prop_{.col}")) |>
+  mutate(across(starts_with("live_births_"), ~ .x/total_live_births, .names="prop_{.col}"))
+
+  
+head(maternal_byAge2)
+head(maternal_byRace2)
+```
+
+```{r}
+# PLOTS
+
+
+```
+
+
+
+
+
+
+
+
