@@ -107,7 +107,7 @@ fertility_merged2 <- fertility_merged %>%
          prop_fer_1524 = births_age1524 / pop_age1524,
          prop_fer_2534 = births_age2534 / pop_age2534,
          prop_fer_3544 = births_age3544 / pop_age3544,
-         fertility_rate = 9 * (prop_fer_1524 + prop_fer_2534 + prop_fer_3544)
+         #fertility_rate = 9 * (prop_fer_1524 + prop_fer_2534 + prop_fer_3544)
          )
 ```
 
@@ -130,7 +130,7 @@ fertil_merg_filter <- fertility_merged2 |> select(c(starts_with("prop_births"),b
 prop_only_merge <- infant_mort1 |>
   left_join(fertil_merg_filter, by=join_by(state,year,bacode)) |>
   mutate(
-    norm_births_nhblack = (prop_births_nhblack.x + prop_births_nhwhite.y)/2,
+    norm_births_nhblack = (prop_births_nhblack.x + prop_births_nhblack.y)/2,
     norm_births_nhwhite =( prop_births_nhwhite.x + prop_births_nhwhite.y)/2,
     norm_births_hisp = (prop_births_hisp.x + prop_births_hisp.y)/2,
     norm_births_otherraceeth = (prop_births_otherraceeth.x + prop_births_otherraceeth.y)/2,
@@ -138,8 +138,8 @@ prop_only_merge <- infant_mort1 |>
   ) |>
   mutate(across(starts_with("norm_births_"), ~round(.x*norm_total_births,0), .names="{.col}")) |>
   select(-c(starts_with("prop_"))) |>
-  mutate(across(starts_with("deaths_"), ~ .x/norm_total_births*1000, .names="infantMort_{.col}")) |>
-  mutate(across(starts_with("norm_births_"), ~ .x/norm_total_births*1000, .names="fertilityRate_{.col}"))
+  mutate(across(starts_with("deaths_"), ~ round(.x/norm_total_births*1000, 2), .names="infantMort_{.col}")) |>
+  mutate(across(starts_with("norm_births_"), ~ round(.x/norm_total_births*1000, 2), .names="fertilityRate_{.col}"))
 
   
 fertility_mortality <- fertility_merged2 |>
@@ -152,11 +152,10 @@ fertility_mortality <- fertility_merged2 |>
 
 ```
 
+```{r}
+births_deaths <- fertility_mortality %>% 
+  select(state, year, births_age1524:births_nonmedicaid, births_total:norm_total_births, exposed_infdeaths, deaths_nhblack:deaths_total, fertilityRate_norm_births_nhblack:fertilityRate_norm_births_otherraceeth, infantMort_deaths_nhblack:infantMort_deaths_otherraceeth)
 
-
-
-
-
-
-
-
+population_update <- fertility_mortality %>% 
+  select(state, year, pop_nhblack:prop_fer_3544)
+```
