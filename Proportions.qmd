@@ -154,8 +154,149 @@ fertility_mortality <- fertility_merged2 |>
 
 ```{r}
 births_deaths <- fertility_mortality %>% 
-  select(state, year, births_age1524:births_nonmedicaid, births_total:norm_total_births, exposed_infdeaths, deaths_nhblack:deaths_total, fertilityRate_norm_births_nhblack:fertilityRate_norm_births_otherraceeth, infantMort_deaths_nhblack:infantMort_deaths_otherraceeth)
+  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:fertility_rate_us, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total) %>% 
+  mutate(norm_total_births = round(norm_total_births, 0),
+         region = case_when(
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing"
+         ))
 
 population_update <- fertility_mortality %>% 
-  select(state, year, pop_nhblack:prop_fer_3544)
+  select(state, year, bacode, pop_total:pop_age3544, prop_births_1524:prop_births_otherraceeth)
+
+
+```
+
+```{r}
+library(ggplot2)
+
+#do states with higher medicaid have higher or lower births?
+ggplot(births_deaths, aes(x = births_medicaid, y = norm_total_births)) + geom_point() + geom_smooth(method = "lm") + labs(x = "Births on Medicaid", y = "Total Births")
+
+#wont work
+ggplot(births_deaths, aes(x = births_medicaid, y = deaths_total)) + geom_point() + geom_smooth(method = "lm")
+```
+
+```{r}
+# fertility_edu <- fertility_years %>% 
+#   pivot_longer(cols = c("births_nohs", "births_hs", "births_somecoll", "births_coll"), names_to = "edu_backg", values_to = "edu_births")
+
+#education births, histogram is also right skewed
+ethi_births <- births_deaths %>% 
+  select(starts_with("norm_births"), year, bacode, state, region) %>% 
+  pivot_longer(cols = starts_with("norm_births"), names_to = "ethnicity", values_to = "eth_births") 
+
+eth_median <- ethi_births %>% 
+  group_by(year,ethnicity) %>%
+  summarise(median = median(eth_births))
+  
+ggplot(eth_births, aes(x = ethnicity, y = eth_births, fill = ethnicity)) + geom_bar(stat = "identity")
+
+#median births per year
+ggplot(eth_median, aes(x = year, y = median, color = ethnicity, group = ethnicity)) + geom_point() + geom_line()
+```
+
+```{r}
+ethi_deaths <- births_deaths %>% 
+  select(deaths_nhblack, deaths_nhwhite, deaths_hisp, deaths_otherraceeth, year, bacode, state, region) %>% 
+  pivot_longer(cols = c(deaths_nhblack, deaths_nhwhite, deaths_hisp, deaths_otherraceeth), names_to = "ethnicity", values_to = "eth_deaths")
+```
+
+```{r}
+#education 
+education_data <- births_deaths %>% 
+  pivot_longer(cols = c(births_nohs, births_hs, births_somecoll, births_coll),
+               names_to = "education_level",
+               values_to = "births")
+#right skewed
+#hist(education_data$births)
+
+education_avg <- education_data %>% 
+  group_by(year, education_level) %>% 
+  summarise(median_births = median(births))
+
+#bar graph of education level
+ggplot(education_data, aes(x = education_level, y = births, fill = education_level)) + geom_bar(stat = "identity")
+
+#median births per year
+ggplot(education_avg, aes(x = year, y = median_births, color = education_level, group = education_level)) + geom_point() + geom_line()
+```
+
+```{r}
+library(dplyr)
+library(gt)
+
+ethi_births %>%
+  group_by(region, ethnicity) %>%
+  summarise(Total_Births = sum(eth_births)) %>%
+  mutate(ethnicity = recode(ethnicity,
+                            "norm_births_hisp" = "Hispanic",
+                            "norm_births_nhblack" = "Non-Hispanic Black",
+                            "norm_births_nhwhite" = "Non-Hispanic White",
+                            "norm_births_otherraceeth" = "Other Race")) %>%
+  gt() %>%
+  cols_label(
+    ethnicity = "Ethnicity", 
+    Total_Births = "Total Births") %>%
+  tab_header(
+    title = "Births by Ethnicity Across U.S. Regions"
+  )
+
+ethi_births %>%
+  group_by(ethnicity) %>%
+  summarise(Total_Births = sum(eth_births)) %>%
+  mutate(ethnicity = recode(ethnicity,
+                            "norm_births_hisp" = "Hispanic",
+                            "norm_births_nhblack" = "Non-Hispanic Black",
+                            "norm_births_nhwhite" = "Non-Hispanic White",
+                            "norm_births_otherraceeth" = "Other Race")) %>% 
+  gt() %>%
+  cols_label(
+    ethnicity = "Ethnicity", 
+    Total_Births = "Total Births") %>% 
+  tab_header(
+    title = "Births by Ethnicity in the United States"
+  ) 
+
+
+# ethi_deaths <- births_deaths %>% 
+#   select(deaths_nhblack, deaths_nhwhite, deaths_hisp, deaths_otherraceeth, year, bacode, state, region) %>% 
+#   pivot_longer(cols = c(deaths_nhblack, deaths_nhwhite, deaths_hisp, deaths_otherraceeth), names_to = "ethnicity", values_to = "eth_deaths")
+
+ethi_deaths %>% 
+  group_by(ethnicity) %>% 
+  summarise(total_deaths = sum(eth_deaths)) %>% 
+  mutate(ethnicity = recode(ethnicity,
+                            "deaths_hisp" = "Hispanic",
+                            "deaths_nhblack" = "Non-Hispanic Black",
+                            "deaths_nhwhite" = "Non-Hispanic White",
+                            "deaths_otherraceeth" = "Other Race")) %>%
+  gt() %>% 
+  cols_label(
+    ethnicity = "Ethnicity", 
+    total_deaths = "Total Births")%>% 
+  tab_header(
+    title = "Infant Deaths by Ethnicity in the United States"
+  ) 
+
+ethi_deaths %>% 
+  group_by(region, ethnicity) %>% 
+  summarise(total_deaths = sum(eth_deaths)) %>% 
+  mutate(ethnicity = recode(ethnicity,
+                            "deaths_hisp" = "Hispanic",
+                            "deaths_nhblack" = "Non-Hispanic Black",
+                            "deaths_nhwhite" = "Non-Hispanic White",
+                            "deaths_otherraceeth" = "Other Race")) %>%
+  gt() %>% 
+  cols_label(
+    ethnicity = "Ethnicity", 
+    total_deaths = "Total Births")%>% 
+  tab_header(
+    title = "Infant Deaths by Ethnicity by U.S. Region"
+  ) 
+  
 ```
