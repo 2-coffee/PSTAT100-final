@@ -13,6 +13,7 @@ library(tidyr)
 library(forcats)
 library(qtl2)
 library(janitor)
+#A problem we ran into was trying to merge the datasets. I noticed the births columns by ethnicities did not have the same values. 
 ```
 
 ```{r}
@@ -72,6 +73,7 @@ infant_mortality_biannual_data |>
 
 ```{r}
 fertility_merged2 <- fertility_merged %>% 
+  select(state:bmcode) %>% 
   mutate(prop_births_1524 = births_age1524 / births_total,
          prop_births_2534 = births_age2534 / births_total,
          prop_births_3544 = births_age3544 / births_total,
@@ -86,27 +88,28 @@ fertility_merged2 <- fertility_merged %>%
          prop_births_nhwhite = births_nhwhite / births_total,
          prop_births_hisp = births_hisp / births_total,
          prop_births_otherraceeth = births_otherraceeth / births_total,
-         prop_1524 = pop_age1524 / pop_total,
-         prop_2534 = pop_age2534 / pop_total,
-         prop_3544 = pop_age3544 / pop_total,
-         prop_nohs = pop_nohs / pop_total,
-         prop_hs = pop_hs / pop_total,
-         prop_somecoll = pop_somecoll / pop_total,
-         prop_coll = pop_coll / pop_total,
-         prop_married = pop_married /pop_total,
-         prop_unmarried = pop_unmarried / pop_total,
-         prop_medicaid = pop_medicaid / pop_total,
-         prop_nblack = pop_nhblack / pop_total,
-         prop_nwhite = pop_nhwhite / pop_total,
-         prop_hisp = pop_hisp / pop_total,
-         prop_otherraceeth = pop_otherraceeth / pop_total
+         # prop_1524 = pop_age1524 / pop_total,
+         # prop_2534 = pop_age2534 / pop_total,
+         # prop_3544 = pop_age3544 / pop_total,
+         # prop_nohs = pop_nohs / pop_total,
+         # prop_hs = pop_hs / pop_total,
+         # prop_somecoll = pop_somecoll / pop_total,
+         # prop_coll = pop_coll / pop_total,
+         # prop_married = pop_married /pop_total,
+         # prop_unmarried = pop_unmarried / pop_total,
+         # prop_medicaid = pop_medicaid / pop_total,
+         # prop_nblack = pop_nhblack / pop_total,
+         # prop_nwhite = pop_nhwhite / pop_total,
+         # prop_hisp = pop_hisp / pop_total,
+         # prop_otherraceeth = pop_otherraceeth / pop_total
+         prop_fer_1524 = births_age1524 / pop_age1524,
+         prop_fer_2534 = births_age2534 / pop_age2534,
+         prop_fer_3544 = births_age3544 / pop_age3544,
+         fertility_rate = 9 * (prop_fer_1524 + prop_fer_2534 + prop_fer_3544)
          )
 ```
 
 ```{r}
-fertility_eth <- fertility_merged2 %>% 
-  pivot_longer(cols = c("prop_births_nhblack", "prop_births_nhwhite", "prop_births_hisp", "prop_births_otherraceeth"), names_to = "ethnicity", values_to = "eth_births")
-
-ggplot(fertility_eth, aes(x = ethnicity, y = eth_births, fill = ethnicity)) +
-  geom_bar(stat = "identity", position = "stack") + coord_flip()
+#havent merged
+fertility_mortality <- bind_rows(fertility_merged2, infant_mortality_biannual_data)
 ```
