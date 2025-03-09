@@ -19,6 +19,8 @@ library(janitor)
 ```{r}
 fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv")
 infant_mortality_biannual_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/infant_mortality_biannual_data.csv")
+# fertility_data <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/fertility_data.csv")
+# infant_mortality_biannual_data <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/infant_mortality_biannual_data.csv")
 ```
 
 ```{r}
@@ -26,7 +28,7 @@ fertility_update <- fertility_data %>%
   filter(bmcode %in% c(1, 2, 3)) %>%  
   group_by(state, year) %>%  
   summarise(across(births_age1524:pop_age3544, ~sum(., na.rm = TRUE))) %>%  
-  mutate(bmcode =1,
+  mutate(bacode =1,
          across(pop_total:pop_age3544, ~./3)) %>% 
   ungroup() 
 
@@ -39,7 +41,7 @@ fertility_update2 <- fertility_data %>%
   filter(bmcode %in% c(4, 5, 6)) %>%  
   group_by(state, year) %>%  
   summarise(across(births_age1524:pop_age3544, ~sum(., na.rm = TRUE))) %>%  
-  mutate(bmcode = 2,
+  mutate(bacode = 2,
          across(pop_total:pop_age3544, ~./3)) %>% 
   ungroup()
 
@@ -73,7 +75,7 @@ infant_mortality_biannual_data |>
 
 ```{r}
 fertility_merged2 <- fertility_merged %>% 
-  select(state:bmcode) %>% 
+  select(state:bacode) %>% 
   mutate(prop_births_1524 = births_age1524 / births_total,
          prop_births_2534 = births_age2534 / births_total,
          prop_births_3544 = births_age3544 / births_total,
@@ -110,6 +112,51 @@ fertility_merged2 <- fertility_merged %>%
 ```
 
 ```{r}
-#havent merged
-fertility_mortality <- bind_rows(fertility_merged2, infant_mortality_biannual_data)
+# merge and recalculate number of births. 
+infant_mort1 <- infant_mortality_biannual_data |>
+  rename("infant_births_total"=births_total) |>
+  mutate(across(starts_with("births_"), ~ .x/infant_births_total, .names="prop_{.col}")) |>
+  select( c(starts_with("deaths_"),starts_with("prop_births"), infant_births_total, state,year,bacode)) |>
+  filter(year >=2016) 
+
+infant_mort1 <- infant_mort1 |>
+  mutate(across(colnames(infant_mort1), ~ replace_na(.x,0)))
+
+    
+
+
+fertil_merg_filter <- fertility_merged2 |> select(c(starts_with("prop_births"),births_total, state, year,bacode)) |> select(11:18)
+  
+prop_only_merge <- infant_mort1 |>
+  left_join(fertil_merg_filter, by=join_by(state,year,bacode)) |>
+  mutate(
+    norm_births_nhblack = (prop_births_nhblack.x + prop_births_nhwhite.y)/2,
+    norm_births_nhwhite =( prop_births_nhwhite.x + prop_births_nhwhite.y)/2,
+    norm_births_hisp = (prop_births_hisp.x + prop_births_hisp.y)/2,
+    norm_births_otherraceeth = (prop_births_otherraceeth.x + prop_births_otherraceeth.y)/2,
+    norm_total_births = (infant_births_total+births_total)/2
+  ) |>
+  mutate(across(starts_with("norm_births_"), ~round(.x*norm_total_births,0), .names="{.col}")) |>
+  select(-c(starts_with("prop_"))) |>
+  mutate(across(starts_with("deaths_"), ~ .x/norm_total_births*1000, .names="infantMort_{.col}")) |>
+  mutate(across(starts_with("norm_births_"), ~ .x/norm_total_births*1000, .names="fertilityRate_{.col}"))
+
+  
+fertility_mortality <- fertility_merged2 |>
+  left_join(infant_mortality_biannual_data, by = join_by(state,year, bacode)) |>
+  select(-c(ends_with(".x"), ends_with(".y"), starts_with("deaths"))) |>
+  left_join(prop_only_merge, by=join_by(state,year,bacode))
+  
+
+
+
 ```
+
+
+
+
+
+
+
+
+
