@@ -104,10 +104,10 @@ fertility_merged2 <- fertility_merged %>%
          # prop_nwhite = pop_nhwhite / pop_total,
          # prop_hisp = pop_hisp / pop_total,
          # prop_otherraceeth = pop_otherraceeth / pop_total
-         prop_fer_1524 = births_age1524 / pop_age1524,
-         prop_fer_2534 = births_age2534 / pop_age2534,
-         prop_fer_3544 = births_age3544 / pop_age3544,
-         #fertility_rate = 9 * (prop_fer_1524 + prop_fer_2534 + prop_fer_3544)
+         fer_rate_1524 = births_age1524 / pop_age1524,
+         fer_rate_2534 = births_age2534 / pop_age2534,
+         fer_rate_3544 = births_age3544 / pop_age3544,
+         fertility_rate_us = 9 * (fer_rate_1524 + fer_rate_2534 + fer_rate_3544)
          )
 ```
 
@@ -138,8 +138,8 @@ prop_only_merge <- infant_mort1 |>
   ) |>
   mutate(across(starts_with("norm_births_"), ~round(.x*norm_total_births,0), .names="{.col}")) |>
   select(-c(starts_with("prop_"))) |>
-  mutate(across(starts_with("deaths_"), ~ round(.x/norm_total_births*1000, 2), .names="infantMort_{.col}")) |>
-  mutate(across(starts_with("norm_births_"), ~ round(.x/norm_total_births*1000, 2), .names="fertilityRate_{.col}"))
+  mutate(across(starts_with("deaths_"), ~ round(.x/norm_total_births*1000, 2), .names="infantMort_{.col}")) #|>
+  #mutate(across(starts_with("norm_births_"), ~ round(.x/norm_total_births*1000, 2), .names#="fertilityRate_{.col}"))
 
   
 fertility_mortality <- fertility_merged2 |>
