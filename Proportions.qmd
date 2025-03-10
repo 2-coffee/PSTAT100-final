@@ -185,7 +185,7 @@ ggplot(births_deaths, aes(x = births_medicaid, y = deaths_total)) + geom_point()
 # fertility_edu <- fertility_years %>% 
 #   pivot_longer(cols = c("births_nohs", "births_hs", "births_somecoll", "births_coll"), names_to = "edu_backg", values_to = "edu_births")
 
-#education births, histogram is also right skewed
+#ethinicity births, histogram is also right skewed
 ethi_births <- births_deaths %>% 
   select(starts_with("norm_births"), year, bacode, state, region) %>% 
   pivot_longer(cols = starts_with("norm_births"), names_to = "ethnicity", values_to = "eth_births") 
@@ -193,11 +193,17 @@ ethi_births <- births_deaths %>%
 eth_median <- ethi_births %>% 
   group_by(year,ethnicity) %>%
   summarise(median = median(eth_births))
-  
+
+eth_region <- ethi_births %>% 
+  group_by(region, ethnicity) %>% 
+  summarise(median_region = median(eth_births))
+
 ggplot(eth_births, aes(x = ethnicity, y = eth_births, fill = ethnicity)) + geom_bar(stat = "identity")
 
 #median births per year
 ggplot(eth_median, aes(x = year, y = median, color = ethnicity, group = ethnicity)) + geom_point() + geom_line()
+
+ggplot(eth_region, aes(x = region, y = median_region, color = ethnicity, group = ethnicity)) + geom_point() + geom_line()
 ```
 
 ```{r}
@@ -278,7 +284,7 @@ ethi_deaths %>%
   gt() %>% 
   cols_label(
     ethnicity = "Ethnicity", 
-    total_deaths = "Total Births")%>% 
+    total_deaths = "Total Births") %>% 
   tab_header(
     title = "Infant Deaths by Ethnicity in the United States"
   ) 
@@ -294,9 +300,50 @@ ethi_deaths %>%
   gt() %>% 
   cols_label(
     ethnicity = "Ethnicity", 
-    total_deaths = "Total Births")%>% 
+    total_deaths = "Total Births") %>% 
   tab_header(
     title = "Infant Deaths by Ethnicity by U.S. Region"
   ) 
   
+```
+
+```{r}
+fertility_rate <- births_deaths %>% 
+  pivot_longer(cols = starts_with("fer_rate_"),
+               names_to = "fertility_rate_age",
+               values_to = "rate")
+hist(fertility_rate$rate)
+
+fertility_mode <- fertility_rate %>% 
+  group_by(region, fertility_rate_age) %>% 
+  summarise(mode_rate = median(rate))
+
+ggplot(fertility_mode, aes(x = region, y = mode_rate, color = fertility_rate_age, group = fertility_rate_age)) + geom_point() + geom_line()
+```
+
+```{r}
+set.seed(314)
+kmeans_result <- kmeans(fertility_rate$rate, centers = 2)
+fertility_rate$cluster <- kmeans_result$cluster
+
+ggplot(fertility_rate, aes(x = rate, fill = as.factor(cluster))) +
+  geom_histogram()
+
+first_cluster <- fertility_rate %>% 
+  filter(cluster ==1)
+
+fertility_median1 <- first_cluster %>% 
+  group_by(region, fertility_rate_age) %>% 
+  summarise(median_rate = median(rate))
+
+second_cluster <- fertility_rate %>% 
+  filter(cluster ==2)
+
+fertility_median2 <- second_cluster %>% 
+  group_by(region, fertility_rate_age) %>% 
+  summarise(median_rate = median(rate))
+
+ggplot(fertility_median1, aes(x = region, y = median_rate, color = fertility_rate_age, group = fertility_rate_age)) + geom_point() + geom_line()
+
+ggplot(fertility_median2, aes(x = region, y = median_rate, color = fertility_rate_age, group = fertility_rate_age)) + geom_point() + geom_line()
 ```
