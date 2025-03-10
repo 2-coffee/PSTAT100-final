@@ -79,3 +79,143 @@ The NCHS obtains maternal death records from state vital registration offices th
 | `pop_nonmedicaid` | Population not covered by Medicaid (women age 15-54 population) |
 
 ## Exploratory Data Analysis
+
+
+
+```{r}
+library(ggplot2)
+library(janitor)
+maternal_mort1 <- maternal_mort |>
+  pivot_wider(names_from= Group, values_from=Subgroup)
+
+maternal_mort1 <- maternal_mort1 %>% 
+  clean_names()
+
+maternal_byAge <- maternal_mort1 |> filter(!is.na(age))
+maternal_byRace <- maternal_mort1 |> filter(!is.na(race_and_hispanic_origin)) |>
+  rename("RaceEth"=race_and_hispanic_origin)
+
+head(maternal_byAge)
+head(maternal_byRace)
+okabe <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#D55E00", "#CC79A7")
+
+maternal_byRace |> ggplot(aes(x=year_of_death, y=maternal_mortality_rate, color=RaceEth)) +
+  geom_point()
+maternal_byRace |> ggplot(aes(x=live_births, y=maternal_deaths, color=as.factor(year_of_death))) +
+  geom_point() + 
+  scale_color_manual(values=okabe)
+
+```
+
+```{r}
+fertility_data |> select(year, policy_on) |> filter(policy_on==1) |> summarize(n=n(), .by=year )
+infant_data |> select(year, policy_on) |> filter(policy_on==1) |> summarize(n=n(), .by=year )
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+**Data description:** write up a short summary of the dataset you chose to work with following the conventions introduced in previous assignments. Cover the sampling if applicable and data semantics, but focus on providing high-level context and not technical details; don’t report preprocessing steps or describe tabular layouts, etc.
+
+**Question of interest:** motivate and formulate your question; explain what a satisfactory answer might look like.
+
+**Data analysis:** provide a walkthrough with commentary of the steps you took to investigate and answer the question. This section can and should include code cells and text cells, but you should try to focus on presenting the analysis clearly by organizing cells according to the high-level steps in your analysis so that it is easy to skim. For example, if you fit a regression model, include formulating the explanatory variable matrix and response, fitting the model, extracting coefficients, and perhaps even visualization all in one cell; don’t separate these into 5-6 substeps.
+
+**Summary of findings:** answer your question by interpreting the results of your analysis, referring back as appropriate. This can be a short paragraph or a bulleted list.
+
+# Background
+
+The Infant Mortality and Fertility Rates Dataset provides data on infant mortality rates (measured as the number of infant deaths per 1,000 live births) and fertility rates (measured as the number of births per 1,000 women per year) across U.S. states. The Infant Mortality Dataset covers the years 2003 to 2023, while the Fertility Rates Dataset spans 2016 to 2023.
+
+Infant mortality refers to the death of baby that occurs before their first birthday. It is a key indicator of a population's overall health, reflecting the social, economic, and healthcare conditions within a state. High infant mortality rates could indicate insufficient healthcare access or inequalities in medical services, particularly in low-income and rural areas. Over the years, improvements in screening and treatment for illnesses, better obstetric management, and neonatal care have contributed in the declining of infant mortality rates, but disparities still exist within state and demographic groups. (<https://www.vcuhealth.org/news/infant-mortality-rates-declining-but-sudden-unexpected-infant-death-is-on-the-rise/#:~:text=Wolf%20attributes%20declining%20overall%20infant,media%20on%20infant%20sleep%20practices.>) (<https://www.nichd.nih.gov/health/topics/infant-mortality/topicinfo>) (<https://www.cdc.gov/nchs/data_access/vitalstatsonline.htm>)
+
+Fertility rate represents the total number of children a woman has during her reproductive years. It plays a crucial role in population growth and demographical planning, influencing services such as education, healthcare, and workforce development. From 2007 to 2022, the fertility rate has dropped by about 19%, influenced by the health of the economy, social, health, and historical events. These changes have long-term implications, as it leads to an aging population, smaller workforce, and economic strain on government budgets. (<https://www.britannica.com/topic/fertility-rate>) (<https://www.northwell.edu/news/the-latest/us-fertility-rate-decline-impact#:~:text=After%20a%20few%20decades%20of,historical%20events%E2%80%94affect%20family%20sizes.>)
+
+Maternal mortality is a leading cause of death and disability for adult women worldwide, responsible for an estimated 289,000 deaths in 2013 \[1\]. It represents true excess burden of disease since the overwhelming majority of maternal deaths are due to preventable causes; and could be treated with well-understood interventions that have long been available in the global North. If the infant survives birth but the mother does not, the resulting lack of nutritional support from breastfeeding leaves the baby vulnerable to malnutrition, which can itself be fatal or may increase the risk of disease or death from infection \[6–8\]. Older siblings also may suffer in many ways without maternal care: among orphans, the risk of child labor \[9, 10\], poor learning outcomes and lower educational attainment \[11\], and disrupted living arrangements \[12\] can impose trauma that has detrimental impacts on health and well-being.
+
+The Maternal Mortality dataset provides national-level provisional counts of deaths among women who die during pregnancy or within 42 days of the termination of pregnancy, but not from accidental or incidental causes. These deaths are based on death records that have been received and processed by the National Center for Health Statistics (NCHS) as of a specified cutoff date. The dataset includes deaths among U.S. residents that occurred within the 50 states and the District of Columbia. Maternal mortality rates are calculated as deaths per 100,000 live births.
+
+## Data Sources
+
+The datasets come from the Centers for Disease Control and Prevention (CDC), collected from anywhere a person receives healthcare. This may lead to limitations as it is up to the city, county, and state to decide what information is collected, and how and when it can be shared by the CDC. (<https://archive.cdc.gov/www_cdc_gov/surveillance/data-modernization/basics/where_does_our_data_come_from.html>)
+
+The CDC uses The Pregnancy Risk Assessment Monitoring System (PRAMS) collects data on attitudes and experiences before, during, and after pregnancy. PRAMS data can be used to measure progress toward goals in improving the health of mothers and infants.  
+
+Each month at the jurisdiction level, a stratified sample is randomly drawn from the current birth certificate file. For each of these monthly samples, or "batches," a series of mailings begins 2 to 4 months after delivery. This is to allow new mothers time to respond to questions about the early postpartum period. With all mailings, an invitation is sent to complete the survey by web.
+
+The NCHS obtains maternal death records from state vital registration offices through the Vital Statistics Cooperative Program. The estimates of maternal mortalities are derived from final mortality data for the years 2019 to 2021, and provisional data for the years 2022 to 2024. Provisional data reflects counts based on reports that are still being processed, while finalized data represents more complete counts of maternal deaths after thorough review and analysis. ([Provisional Maternal Death Counts](https://www.cdc.gov/nchs/nvss/vsrr/provisional-maternal-deaths.htm))
+
+```{r}
+
+```
+
+
+# Homework 2
+
+## Question 11: Missing values
+
+Gap estimates were not calculated for certain grades in certain districts due to small sample sizes (not enough individual tests recorded). Answer the following:
+
+What proportion of rows are missing for each of the reading and math gap variables? Store these values as math_missing and reading_missing, respectively.
+
+What proportion of districts (not rows!) have missing gap estimates for one or both test subjects for at least one grade level? Store the value as district_missing.
+
+## Question 12: Missing mechanism
+
+Do you expect that this missingness is more likely for some districts than for others? If so, explain; why is this, and is bias a concern if missing values are dropped?
+
+I'd expect more missingness in rural areas or fringe communities. There are not enough students to calculate test averages. I believe dropping these missing values could introduce bias because these communities are usually poorer, which may play a role in academic outcomes.
+
+
+
+# Insurance factors
+
+## Question 14: Scatter Plot
+
+Create a panel of scatterplots showing the relationship between estimated gender gap and socioeconomic factors, with points colored by test subject. Use facet_wrap to show a plot for each of the 5 socioeconimc variables. Adjust the size and transparency of the points to reduce the impact of overplotting. Which subject has the larger gap, reading or math? Which gender is performing better in this subject?
+
+
+## Question 16: Relationships by grade level
+
+Modify the plot above to show these relationships by grade level: generate a panel of scatterplots of gap against socioeconomic measures by subject, coloring the lines according to Grade. Since Grade is a numeric variable by default, if we want separate colored lines for each grade, we need to specify that Grade should be treated as factor in the aesthetics. To do so, set col=as.factor(Grade). Add colorspace::scale_color_discrete_sequential(palette="Viridis") to your ggplot to set the grades to the Viridis color palette.
+
+## Question 17: Does locale matter?
+
+Let's focus just on math scores and consider whether or not locale matters. The chunk below adds a new variable, locale2 which is a coarser summary of locale which inclues just "Rural", "Town", "Suburbu" and "City", but not the more detailed descriptions.
+
+
+## Question 19: Proportion of districts with a math gap
+
+What proportion of districts in each income bracket have an average estimated math achievement gap favoring boys? Answer this question by performing the following steps:
+
+Append an indicator variable Math gap favoring boys to seda_data_agg that records whether the average estimated math gap favors boys by more than 0.1 standard deviations relative to the national average.
+
+Compute the proportion of districts in each income bracket for which the indicator is true: group by bracket and summarize Math gap favoring boys by taking the mean. Store the resulting data frame as income_bracket_boys_favored. What fraction of districts with a log income of $95,000-$11s9000 have a math gap favoring boys by more than 0.1 standard deviations?
+
+# Homework 3
+
+### Incase we need this: question 6 
+```{r}
+diatom_summary2 <- diatom_summary |>
+    pivot_longer(
+        cols = everything(),
+        names_pattern = "(.+)_(mean|sd)$",
+        names_to = c("taxon", "statistic"),
+        values_to = "value"
+    ) |> pivot_wider(names_from=statistic, values_from=value) 
+
+print(diatom_summary2)
+```
+
+## Question 7: Distribution of diatom abundances over time
+
+Use the diatoms3 dataframe to make a line plot of Age vs relative abundance faceted by taxon. Set scales="free in the call to facet_wrap to give each facet it's own y-scale. You may need to pivot_longer on diatoms3 to make plotting easier.
+
+## PCA?
+
+# Homework 4
+
+## Question 6: potential confounding
+
+Look at the age distribution for Multi Race and consider the age-expenditure relationship. Can you explain why the median expenditure for this group might be lower than the others? Answer in 1-2 sentences.
+
+
