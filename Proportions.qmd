@@ -221,15 +221,21 @@ education_data <- births_deaths %>%
 #right skewed
 #hist(education_data$births)
 
-education_avg <- education_data %>% 
+education_median <- education_data %>% 
   group_by(year, education_level) %>% 
+  summarise(median_births = median(births))
+
+education_region <- education_data %>% 
+  group_by(region, education_level) %>% 
   summarise(median_births = median(births))
 
 #bar graph of education level
 ggplot(education_data, aes(x = education_level, y = births, fill = education_level)) + geom_bar(stat = "identity")
 
 #median births per year
-ggplot(education_avg, aes(x = year, y = median_births, color = education_level, group = education_level)) + geom_point() + geom_line()
+ggplot(education_median, aes(x = year, y = median_births, color = education_level, group = education_level)) + geom_point() + geom_line()
+
+ggplot(education_region, aes(x = region, y = median_births, color = education_level, group = education_level)) + geom_point() + geom_line()
 ```
 
 ```{r}
@@ -346,4 +352,29 @@ fertility_median2 <- second_cluster %>%
 ggplot(fertility_median1, aes(x = region, y = median_rate, color = fertility_rate_age, group = fertility_rate_age)) + geom_point() + geom_line()
 
 ggplot(fertility_median2, aes(x = region, y = median_rate, color = fertility_rate_age, group = fertility_rate_age)) + geom_point() + geom_line()
+```
+
+```{r}
+age_data <- births_deaths %>% 
+  select(starts_with("births_age"), year, region) %>% 
+  pivot_longer(cols = starts_with("births_age"),
+               names_to = "age_groups",
+               values_to = "births")
+
+hist(age_data$births)
+
+age_median <- age_data %>% 
+  group_by(year, age_groups) %>% 
+  summarise(median_births = median(births))
+
+age_median1 <- age_data %>% 
+  group_by(region, age_groups) %>% 
+  summarise(median_births = median(births))
+
+#bar graph of education level
+ggplot(age_data, aes(x = age_groups, y = births, fill = age_groups)) + geom_bar(stat = "identity")
+
+ggplot(age_median1, aes(x = region, y = median_births, color = age_groups, group = age_groups)) + geom_point() + geom_line()
+
+ggplot(age_median, aes(x = year, y = median_births, color = age_groups, group = age_groups)) + geom_point() + geom_line()
 ```
