@@ -122,8 +122,6 @@ infant_mort1 <- infant_mortality_biannual_data |>
 infant_mort1 <- infant_mort1 |>
   mutate(across(colnames(infant_mort1), ~ replace_na(.x,0)))
 
-    
-
 
 fertil_merg_filter <- fertility_merged2 |> select(c(starts_with("prop_births"),births_total, state, year,bacode)) |> select(11:18)
   
@@ -151,8 +149,7 @@ fertility_mortality <- fertility_merged2 |>
          fer_rate_hisp = norm_births_hisp / pop_hisp,
          fer_rate_otherraceeth = norm_births_otherraceeth / pop_otherraceeth)
   
-median_income <- read.csv('~/Desktop/median_income_2016_2023.csv')
-
+median_income <- read.csv('~/pstat100/final_project/median_income_2016_2023.csv')
 
 
 ```
@@ -204,7 +201,7 @@ eth_region <- ethi_births %>%
   group_by(region, ethnicity) %>% 
   summarise(median_region = median(eth_births))
 
-ggplot(eth_births, aes(x = ethnicity, y = eth_births, fill = ethnicity)) + geom_bar(stat = "identity")
+ggplot(ethi_births, aes(x = ethnicity, y = eth_births, fill = ethnicity)) + geom_bar(stat = "identity")
 
 #median births per year
 ggplot(eth_median, aes(x = year, y = median, color = ethnicity, group = ethnicity)) + geom_point() + geom_line()
@@ -248,7 +245,7 @@ ggplot(education_region, aes(x = region, y = median_births, color = education_le
 library(dplyr)
 library(gt)
 
-ethi_births %>%
+ethi_births %>% #PVIOT THIS
   group_by(region, ethnicity) %>%
   summarise(Total_Births = sum(eth_births)) %>%
   mutate(ethnicity = recode(ethnicity,
@@ -256,15 +253,18 @@ ethi_births %>%
                             "norm_births_nhblack" = "Non-Hispanic Black",
                             "norm_births_nhwhite" = "Non-Hispanic White",
                             "norm_births_otherraceeth" = "Other Race")) %>%
+  pivot_wider(
+    names_from = region,
+    values_from = Total_Births,
+  ) %>% select(ethnicity,West,Southwest,Midwest,Southeast,Northeast) |>
   gt() %>%
   cols_label(
-    ethnicity = "Ethnicity", 
-    Total_Births = "Total Births") %>%
+    ethnicity = "Ethnicity") %>%
   tab_header(
     title = "Births by Ethnicity Across U.S. Regions"
   )
 
-ethi_births %>%
+ethi_births %>% 
   group_by(ethnicity) %>%
   summarise(Total_Births = sum(eth_births)) %>%
   mutate(ethnicity = recode(ethnicity,
@@ -301,18 +301,21 @@ ethi_deaths %>%
     title = "Infant Deaths by Ethnicity in the United States"
   ) 
 
-ethi_deaths %>% 
+ethi_deaths %>% # FIXED THE PIVOT
   group_by(region, ethnicity) %>% 
   summarise(total_deaths = sum(eth_deaths)) %>% 
   mutate(ethnicity = recode(ethnicity,
                             "deaths_hisp" = "Hispanic",
                             "deaths_nhblack" = "Non-Hispanic Black",
                             "deaths_nhwhite" = "Non-Hispanic White",
-                            "deaths_otherraceeth" = "Other Race")) %>%
+                            "deaths_otherraceeth" = "Other Race")) |>
+  pivot_wider(
+    names_from = region,
+    values_from = total_deaths,
+  ) %>% select(ethnicity,West,Southwest,Midwest,Southeast,Northeast) |>
   gt() %>% 
   cols_label(
-    ethnicity = "Ethnicity", 
-    total_deaths = "Total Births") %>% 
+    ethnicity = "Ethnicity") %>% 
   tab_header(
     title = "Infant Deaths by Ethnicity by U.S. Region"
   ) 
@@ -321,11 +324,12 @@ ethi_deaths %>%
 #compare infant mortality rates
 #color by fertility rates (age group) scatterplot x = fertility y = mortality 
 #how do ethnic, educational, and regional factors influence birth rates and infant mortality trends across the US from 2016 to 2023?
+# make 2 more tables for fertility rates and infant mortality rates.
 ```
 
 ```{r}
 fertility_rate <- births_deaths %>% 
-  pivot_longer(cols = starts_with("fer_rate_"),
+  pivot_longer(cols = matches("fer_rate_[0-9]"),
                names_to = "fertility_rate_age",
                values_to = "rate")
 hist(fertility_rate$rate)
@@ -334,7 +338,8 @@ fertility_mode <- fertility_rate %>%
   group_by(region, fertility_rate_age) %>% 
   summarise(mode_rate = median(rate))
 
-ggplot(fertility_mode, aes(x = region, y = mode_rate, color = fertility_rate_age, group = fertility_rate_age)) + geom_point() + geom_line()
+ggplot(fertility_mode, aes(x = region, y = mode_rate, color = fertility_rate_age, group = fertility_rate_age)) + 
+  geom_point() + geom_line()
 ```
 
 ```{r}
@@ -364,6 +369,7 @@ ggplot(fertility_median1, aes(x = region, y = median_rate, color = fertility_rat
 ggplot(fertility_median2, aes(x = region, y = median_rate, color = fertility_rate_age, group = fertility_rate_age)) + geom_point() + geom_line()
 ```
 
+
 ```{r}
 age_data <- births_deaths %>% 
   select(starts_with("births_age"), year, region) %>% 
@@ -388,3 +394,61 @@ ggplot(age_median1, aes(x = region, y = median_births, color = age_groups, group
 
 ggplot(age_median, aes(x = year, y = median_births, color = age_groups, group = age_groups)) + geom_point() + geom_line()
 ```
+
+```{r}
+inf_fer_rates  <- births_deaths |> select(state, year, bacode, infantMort_deaths_nhblack:region, -infantMort_deaths_con,-infantMort_deaths_noncon,
+                        -infantMort_deaths_neo,-infantMort_deaths_total) 
+
+inf_fer_rates1 <- inf_fer_rates |> select(state:infantMort_deaths_otherraceeth,region) |>
+  pivot_longer(
+    cols = starts_with("infantMort_"),
+    names_to = "ethnicity",
+    values_to = "InfantMortality"
+  ) |>
+  mutate(ethnicity = recode(ethnicity,
+                            "infantMort_deaths_hisp" = "Hispanic",
+                            "infantMort_deaths_nhblack" = "Non-Hispanic Black",
+                            "infantMort_deaths_nhwhite" = "Non-Hispanic White",
+                            "infantMort_deaths_otherraceeth" = "Other Race"))
+
+
+inf_fer_rates2 <- inf_fer_rates  |> select(c(state:bacode, fer_rate_nhblack:region)) |>
+  pivot_longer(
+    cols= starts_with("fer_rate"),
+    names_to = "ethnicity",
+    values_to = "FertilityRate"
+  ) |> 
+  mutate(ethnicity = recode(ethnicity,
+                            "fer_rate_hisp" = "Hispanic",
+                            "fer_rate_nhblack" = "Non-Hispanic Black",
+                            "fer_rate_nhwhite" = "Non-Hispanic White",
+                            "fer_rate_otherraceeth" = "Other Race"))
+
+inf_fer_rates_main <- inf_fer_rates1 |> 
+  left_join(inf_fer_rates2, by=join_by(state,year,ethnicity,region,bacode))
+  # pivot_wider(
+  #   names_from=region,
+  #   values_from=c(InfantMortality, FertilityRate)
+  #   
+  # )
+inf_fer_rates_main
+inf_fer_rates_main |> ggplot(aes(y=InfantMortality, x=FertilityRate, col=ethnicity)) +
+  geom_point() +
+  scale_y_sqrt() +
+  facet_wrap(vars(region))
+
+# y=fertility
+# x=mortality
+# color=eth
+# facet(regions)
+
+```
+
+get correlation matrix?  
+pick pcs?  
+linear regressions  
+analyze pcs by table  
+graph pc1 to pc2 ?  
+densities on the side of the plots   
+
+problems at the end
