@@ -82,7 +82,6 @@ median income -\> 2020 reasoning <https://www.census.gov/data/developers/data-se
 
 ## Question of Interest
 
-i
 
 ## Exploratory Data Analysis
 
