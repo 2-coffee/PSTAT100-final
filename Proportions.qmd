@@ -107,7 +107,7 @@ fertility_merged2 <- fertility_merged %>%
          fer_rate_1524 = births_age1524 / pop_age1524,
          fer_rate_2534 = births_age2534 / pop_age2534,
          fer_rate_3544 = births_age3544 / pop_age3544,
-         fertility_rate_us = 9 * (fer_rate_1524 + fer_rate_2534 + fer_rate_3544)
+         fertility_rate_state = 9 * (fer_rate_1524 + fer_rate_2534 + fer_rate_3544)
          )
 ```
 
@@ -156,7 +156,7 @@ median_income <- read.csv('~/Desktop/median_income_2016_2023.csv')
 
 ```{r}
 births_deaths <- fertility_mortality %>% 
-  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:fertility_rate_us, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth ) %>% 
+  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:fertility_rate_state, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth ) %>% 
   mutate(norm_total_births = round(norm_total_births, 0),
          region = case_when(
            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
@@ -172,6 +172,12 @@ population_update <- fertility_mortality %>%
 
 births_deaths <- births_deaths %>% 
   left_join(median_income, by = c("state", "year"))
+
+births_deaths %>% 
+  group_by(year) %>% 
+  summarize(total_births_us = sum(norm_total_births, na.rm = TRUE),
+            tfr = sum(fertility_rate_state * total_births_us, na.rm = TRUE)/ sum(total_births_us, na.rm = TRUE)) %>% 
+  ungroup()
 ```
 
 ```{r}
@@ -453,8 +459,32 @@ densities on the side of the plots
 problems at the end
 
 ```{r}
+# births_deaths |>
+#   select(year, norm_total_births) |>
+#   group_by(year) |>
+#   summarise(total_births = sum(norm_total_births)) |>
+#   ggplot(aes(x = year, y = total_births)) + geom_col(fill = "skyblue") +
+#   scale_x_continuous(breaks = seq(min(births_deaths$year), max(births_deaths$year), by = 1)) +
+#   labs(x = "Year", y = "Total Births", title = "Total Births Per Year In the U.S.") 
+# 
+# births_deaths |>
+#   select(year, deaths_total) |>
+#   group_by(year) |>
+#   summarise(total_deaths = sum(deaths_total)) |>
+#   ggplot(aes(x = year, y = total_deaths)) + geom_col(fill = "purple") +
+#   scale_x_continuous(breaks = seq(min(births_deaths$year), max(births_deaths$year), by = 1)) +
+#   labs(x = "Year", y = "Total Births", title = "Total Births Per Year In the U.S.")
+library(corrplot)
 births_deaths |>
-  select(year, norm_total_births) |>
-  group_by(year) |>
-  ggplot(aes(x = year, y = norm_total_births)) + geom_col() 
+  select(year:fertility_rate_us,-bacode, norm_births_nhblack:norm_total_births, median_income, -norm_total_births) |>
+  cor(use = "complete.obs") |>
+  corrplot(addCoef.col = 1, , number.cex = 0.6, order = "hclust")
+
+birth_rates <- births_deaths |>
+  select(year:fertility_rate_us, norm_births_nhblack:norm_total_births, median_income, region, fer_rate_nhblack:fer_rate_otherraceeth, -norm_total_births)
+
+full_model <- lm(fertility_rate_us ~ ., data = birth_rates) %>% 
+  step(direction = "backward")
+library(car)
+vif(full_model)
 ```
