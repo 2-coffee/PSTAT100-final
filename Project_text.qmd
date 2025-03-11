@@ -21,6 +21,8 @@ The datasets come from the Centers for Disease Control and Prevention (CDC), col
 
 The NCHS obtains maternal death records from state vital registration offices through the Vital Statistics Cooperative Program. The estimates of maternal mortalities are derived from final mortality data for the years 2019 to 2021, and provisional data for the years 2022 to 2024. Provisional data reflects counts based on reports that are still being processed, while finalized data represents more complete counts of maternal deaths after thorough review and analysis. (Provisional Maternal Death Counts) https://www.cdc.gov/nchs/nvss/vsrr/provisional-maternal-deaths.htm
 
+median income -\> 2020 reasoning <https://www.census.gov/data/developers/data-sets/acs-1year.2020.html#list-tab-843855098>
+
 ### Infant mortality
 
 | Variable Name | Meaning |
@@ -78,4 +80,16 @@ The NCHS obtains maternal death records from state vital registration offices th
 | `pop_medicaid` | Population covered by Medicaid (women age 15-54 population) |
 | `pop_nonmedicaid` | Population not covered by Medicaid (women age 15-54 population) |
 
+## Question of Interest
+
+i
+
 ## Exploratory Data Analysis
+
+## Data Analysis
+
+## Summary
+
+### Limitations
+
+### Future Directions

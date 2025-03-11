@@ -145,8 +145,13 @@ prop_only_merge <- infant_mort1 |>
 fertility_mortality <- fertility_merged2 |>
   left_join(infant_mortality_biannual_data, by = join_by(state,year, bacode)) |>
   select(-c(ends_with(".x"), ends_with(".y"), starts_with("deaths"))) |>
-  left_join(prop_only_merge, by=join_by(state,year,bacode))
+  left_join(prop_only_merge, by=join_by(state,year,bacode)) |>
+  mutate(fer_rate_nhblack = norm_births_nhblack / pop_nhblack,
+         fer_rate_nhwhite = norm_births_nhwhite / pop_nhwhite,
+         fer_rate_hisp = norm_births_hisp / pop_hisp,
+         fer_rate_otherraceeth = norm_births_otherraceeth / pop_otherraceeth)
   
+median_income <- read.csv('~/Desktop/median_income_2016_2023.csv')
 
 
 
@@ -154,7 +159,7 @@ fertility_mortality <- fertility_merged2 |>
 
 ```{r}
 births_deaths <- fertility_mortality %>% 
-  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:fertility_rate_us, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total) %>% 
+  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:fertility_rate_us, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth ) %>% 
   mutate(norm_total_births = round(norm_total_births, 0),
          region = case_when(
            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
@@ -168,7 +173,8 @@ births_deaths <- fertility_mortality %>%
 population_update <- fertility_mortality %>% 
   select(state, year, bacode, pop_total:pop_age3544, prop_births_1524:prop_births_otherraceeth)
 
-
+births_deaths <- births_deaths %>% 
+  left_join(median_income, by = c("state", "year"))
 ```
 
 ```{r}
@@ -311,6 +317,10 @@ ethi_deaths %>%
     title = "Infant Deaths by Ethnicity by U.S. Region"
   ) 
   
+#work with raw data first
+#compare infant mortality rates
+#color by fertility rates (age group) scatterplot x = fertility y = mortality 
+#how do ethnic, educational, and regional factors influence birth rates and infant mortality trends across the US from 2016 to 2023?
 ```
 
 ```{r}
