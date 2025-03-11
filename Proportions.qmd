@@ -149,8 +149,8 @@ fertility_mortality <- fertility_merged2 |>
          fer_rate_hisp = norm_births_hisp / pop_hisp,
          fer_rate_otherraceeth = norm_births_otherraceeth / pop_otherraceeth)
   
-median_income <- read.csv('~/pstat100/final_project/median_income_2016_2023.csv')
-
+#median_income <- read.csv('~/pstat100/final_project/median_income_2016_2023.csv')
+median_income <- read.csv('~/Desktop/median_income_2016_2023.csv')
 
 ```
 
@@ -369,7 +369,6 @@ ggplot(fertility_median1, aes(x = region, y = median_rate, color = fertility_rat
 ggplot(fertility_median2, aes(x = region, y = median_rate, color = fertility_rate_age, group = fertility_rate_age)) + geom_point() + geom_line()
 ```
 
-
 ```{r}
 age_data <- births_deaths %>% 
   select(starts_with("births_age"), year, region) %>% 
@@ -444,11 +443,18 @@ inf_fer_rates_main |> ggplot(aes(y=InfantMortality, x=FertilityRate, col=ethnici
 
 ```
 
-get correlation matrix?  
-pick pcs?  
-linear regressions  
-analyze pcs by table  
-graph pc1 to pc2 ?  
-densities on the side of the plots   
+get correlation matrix?
+pick pcs?
+linear regressions
+analyze pcs by table
+graph pc1 to pc2 ?
+densities on the side of the plots
 
 problems at the end
+
+```{r}
+births_deaths |>
+  select(year, norm_total_births) |>
+  group_by(year) |>
+  ggplot(aes(x = year, y = norm_total_births)) + geom_col() 
+```
