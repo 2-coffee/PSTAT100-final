@@ -13,6 +13,7 @@ library(tidyr)
 library(forcats)
 library(qtl2)
 library(janitor)
+library(corrplot)
 #A problem we ran into was trying to merge the datasets. I noticed the births columns by ethnicities did not have the same values. 
 ```
 
@@ -24,6 +25,41 @@ infant_mortality_biannual_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/infant
 ```
 
 ```{r}
+#not part of dataset
+fertility_data %>% 
+  group_by(state, year) %>% 
+  summarise(total_1524 = sum(births_age1524),
+            total_2534 = sum(births_age2534),
+            total_3544 = sum(births_age3544),
+            total_nohs = sum(births_nohs),
+            total_hs = sum(births_hs),
+            total_somecoll = sum(births_somecoll),
+            total_coll = sum(births_somecoll),
+            total_married = sum(births_married),
+            total_unmarried = sum(births_unmarried),
+            total_medicaid = sum(births_medicaid),
+            total_nonmedicaid = sum(births_nonmedicaid),
+            total_nhblack = sum(births_nhblack))
+
+births_deaths %>% 
+  group_by(state, year) %>% 
+  summarise(total_1524 = sum(births_age1524),
+            total_2534 = sum(births_age2534),
+            total_3544 = sum(births_age3544),
+            total_nohs = sum(births_nohs),
+            total_hs = sum(births_hs),
+            total_somecoll = sum(births_somecoll),
+            total_coll = sum(births_somecoll),
+            total_married = sum(births_married),
+            total_unmarried = sum(births_unmarried),
+            total_medicaid = sum(births_medicaid),
+            total_nonmedicaid = sum(births_nonmedicaid),
+            total_nhblack = sum(norm_births_nhblack))
+```
+
+
+```{r} 
+#for dataset
 fertility_update <- fertility_data %>%
   filter(bmcode %in% c(1, 2, 3)) %>%  
   group_by(state, year) %>%  
@@ -76,20 +112,21 @@ infant_mortality_biannual_data |>
 ```{r}
 fertility_merged2 <- fertility_merged %>% 
   select(state:bacode) %>% 
-  mutate(prop_births_1524 = births_age1524 / births_total,
-         prop_births_2534 = births_age2534 / births_total,
-         prop_births_3544 = births_age3544 / births_total,
-         prop_births_nohs = births_nohs / births_total,
-         prop_births_hs = births_hs / births_total,
-         prop_births_somecoll = births_somecoll / births_total,
-         prop_births_coll = births_coll / births_total,
-         prop_births_married = births_married / births_total,
-         prop_births_unmarried = births_unmarried / births_total,
-         prop_births_medicaid = births_medicaid / births_total,
-         prop_births_nhblack = births_nhblack / births_total,
-         prop_births_nhwhite = births_nhwhite / births_total,
-         prop_births_hisp = births_hisp / births_total,
-         prop_births_otherraceeth = births_otherraceeth / births_total,
+   mutate(
+          #prop_births_1524 = births_age1524 / births_total,
+  #        prop_births_2534 = births_age2534 / births_total,
+  #        prop_births_3544 = births_age3544 / births_total,
+  #        prop_births_nohs = births_nohs / births_total,
+  #        prop_births_hs = births_hs / births_total,
+  #        prop_births_somecoll = births_somecoll / births_total,
+  #        prop_births_coll = births_coll / births_total,
+  #        prop_births_married = births_married / births_total,
+  #        prop_births_unmarried = births_unmarried / births_total,
+  #        prop_births_medicaid = births_medicaid / births_total,
+  #        prop_births_nhblack = births_nhblack / births_total,
+  #        prop_births_nhwhite = births_nhwhite / births_total,
+  #        prop_births_hisp = births_hisp / births_total,
+  #        prop_births_otherraceeth = births_otherraceeth / births_total,
          # prop_1524 = pop_age1524 / pop_total,
          # prop_2534 = pop_age2534 / pop_total,
          # prop_3544 = pop_age3544 / pop_total,
@@ -104,10 +141,14 @@ fertility_merged2 <- fertility_merged %>%
          # prop_nwhite = pop_nhwhite / pop_total,
          # prop_hisp = pop_hisp / pop_total,
          # prop_otherraceeth = pop_otherraceeth / pop_total
-         fer_rate_1524 = births_age1524 / pop_age1524,
-         fer_rate_2534 = births_age2534 / pop_age2534,
-         fer_rate_3544 = births_age3544 / pop_age3544,
-         fertility_rate_state = 9 * (fer_rate_1524 + fer_rate_2534 + fer_rate_3544)
+         fer_rate_1524 = (births_age1524 / pop_age1524),
+         fer_rate_2534 = (births_age2534 / pop_age2534),
+         fer_rate_3544 = (births_age3544 / pop_age3544),
+         repro_pop = pop_age1524 + pop_age2534 + pop_age3544,
+         # fertility_rate_state = 30 *(
+         #   (fer_rate_1524*(pop_age1524/repro_pop)) +
+         #     (fer_rate_2534*(pop_age2534/repro_pop)) +
+         #     (fer_rate_3544*(pop_age3544/repro_pop)))
          )
 ```
 
@@ -154,9 +195,10 @@ median_income <- read.csv('~/Desktop/median_income_2016_2023.csv')
 
 ```
 
-```{r}
+```{r} 
+#for dataset
 births_deaths <- fertility_mortality %>% 
-  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:fertility_rate_state, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth ) %>% 
+  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:fertility_rate_state, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth, pop_age1524:pop_age3544 ) %>% 
   mutate(norm_total_births = round(norm_total_births, 0),
          region = case_when(
            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
@@ -173,12 +215,59 @@ population_update <- fertility_mortality %>%
 births_deaths <- births_deaths %>% 
   left_join(median_income, by = c("state", "year"))
 
-births_deaths %>% 
-  group_by(year) %>% 
-  summarize(total_births_us = sum(norm_total_births, na.rm = TRUE),
-            tfr = sum(fertility_rate_state * total_births_us, na.rm = TRUE)/ sum(total_births_us, na.rm = TRUE)) %>% 
-  ungroup()
+# births_deaths %>% 
+#   group_by(year) %>% 
+#   summarize(total_births_us = sum(norm_total_births, na.rm = TRUE),
+#             tfr = mean(fertility_rate_state, na.rm = TRUE) ) %>% 
+#   ungroup()
+
+# births_deaths %>% 
+#   group_by(year) %>%
+#   summarize(
+#     total_births_1524 = sum(births_age1524),
+#     total_pop_1524 = sum(pop_age1524),
+#     fr = total_births_1524 / total_pop_1524,
+#     total = sum(fr) * 10
+#   ) 
+
+#fertility rate for US
+pop_state <- fertility_mortality |> select(year,matches("pop_age[0-9]")) |> unique() |>
+  aggregate(. ~ year, FUN=sum)
+
+fertility_rates <- fertility_mortality |> select(year,matches("births_age[0-9]")) |>
+  aggregate(. ~ year, FUN=sum) |>
+  left_join(pop_state) |>
+  mutate(fert_age1524 = births_age1524/pop_age1524 * 1000,
+         fert_age2534 = births_age2534/pop_age2534 * 1000,
+         fert_age3544 = births_age3544/pop_age3544 * 1000) |>
+  select(year,starts_with("fert_age"), starts_with("pop_age"), starts_with("births_age")) |>
+  mutate(tfr = (fert_age1524+fert_age2534+fert_age3544) * 10 /1000,
+         gen_fr = ((births_age1524+births_age2534+births_age3544)/(pop_age1524 + pop_age2534 + pop_age3544))  * 1000)
+
+fertility_rates <- fertility_rates %>% 
+  select(year, tfr, gen_fr )
+
+births_deaths <- births_deaths %>% 
+  left_join(fertility_rates, by = "year")
 ```
+
+```{r}
+births_deaths |>
+  select(year:fertility_rate_state,-bacode, norm_births_nhblack:norm_total_births, median_income, -norm_total_births, tfr, gen_fr) |>
+  cor(use = "complete.obs") |>
+  corrplot(addCoef.col = 1, , number.cex = 0.6, order = "hclust")
+```
+
+
+```{r}
+births_deaths %>% 
+  select(state, year, fer_rate_1524:fer_rate_3544, fertility_rate_state) %>% 
+  group_by(state, year) %>% 
+  summarise(fertility_rate_state = sum(fer_rate_1524 + fer_rate_2534 + fer_rate_3544),
+            fr = fertility_rate_state * 10,
+            total = fr /1000)
+```
+
 
 ```{r}
 library(ggplot2)
@@ -474,7 +563,7 @@ problems at the end
 #   ggplot(aes(x = year, y = total_deaths)) + geom_col(fill = "purple") +
 #   scale_x_continuous(breaks = seq(min(births_deaths$year), max(births_deaths$year), by = 1)) +
 #   labs(x = "Year", y = "Total Births", title = "Total Births Per Year In the U.S.")
-library(corrplot)
+
 births_deaths |>
   select(year:fertility_rate_us,-bacode, norm_births_nhblack:norm_total_births, median_income, -norm_total_births) |>
   cor(use = "complete.obs") |>
