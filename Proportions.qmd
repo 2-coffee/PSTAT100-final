@@ -113,20 +113,20 @@ infant_mortality_biannual_data |>
 fertility_merged2 <- fertility_merged %>% 
   select(state:bacode) %>% 
    mutate(
-          #prop_births_1524 = births_age1524 / births_total,
-  #        prop_births_2534 = births_age2534 / births_total,
-  #        prop_births_3544 = births_age3544 / births_total,
-  #        prop_births_nohs = births_nohs / births_total,
-  #        prop_births_hs = births_hs / births_total,
-  #        prop_births_somecoll = births_somecoll / births_total,
-  #        prop_births_coll = births_coll / births_total,
-  #        prop_births_married = births_married / births_total,
-  #        prop_births_unmarried = births_unmarried / births_total,
-  #        prop_births_medicaid = births_medicaid / births_total,
-  #        prop_births_nhblack = births_nhblack / births_total,
-  #        prop_births_nhwhite = births_nhwhite / births_total,
-  #        prop_births_hisp = births_hisp / births_total,
-  #        prop_births_otherraceeth = births_otherraceeth / births_total,
+  prop_births_1524 = births_age1524 / births_total,
+         prop_births_2534 = births_age2534 / births_total,
+         prop_births_3544 = births_age3544 / births_total,
+         prop_births_nohs = births_nohs / births_total,
+         prop_births_hs = births_hs / births_total,
+         prop_births_somecoll = births_somecoll / births_total,
+         prop_births_coll = births_coll / births_total,
+         prop_births_married = births_married / births_total,
+         prop_births_unmarried = births_unmarried / births_total,
+         prop_births_medicaid = births_medicaid / births_total,
+         prop_births_nhblack = births_nhblack / births_total,
+         prop_births_nhwhite = births_nhwhite / births_total,
+         prop_births_hisp = births_hisp / births_total,
+         prop_births_otherraceeth = births_otherraceeth / births_total,
          # prop_1524 = pop_age1524 / pop_total,
          # prop_2534 = pop_age2534 / pop_total,
          # prop_3544 = pop_age3544 / pop_total,
@@ -198,7 +198,7 @@ median_income <- read.csv('~/Desktop/median_income_2016_2023.csv')
 ```{r} 
 #for dataset
 births_deaths <- fertility_mortality %>% 
-  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:fertility_rate_state, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth, pop_age1524:pop_age3544 ) %>% 
+  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:repro_pop, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth, pop_age1524:pop_age3544 ) %>% 
   mutate(norm_total_births = round(norm_total_births, 0),
          region = case_when(
            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
@@ -213,6 +213,9 @@ population_update <- fertility_mortality %>%
   select(state, year, bacode, pop_total:pop_age3544, prop_births_1524:prop_births_otherraceeth)
 
 births_deaths <- births_deaths %>% 
+  left_join(median_income, by = c("state", "year"))
+
+population_update <- population_update %>% 
   left_join(median_income, by = c("state", "year"))
 
 # births_deaths %>% 

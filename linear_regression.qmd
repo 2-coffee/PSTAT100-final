@@ -1,0 +1,43 @@
+---
+title: "linear_regression"
+format: pdf
+editor: visual
+---
+
+```{r}
+births_prop <- births_deaths %>% 
+  select(state, year, births_age1524:births_nonmedicaid, norm_births_nhblack:norm_total_births, region, median_income, tfr, gen_fr)
+
+pop_prop <- population_data %>% 
+  select(state, year, pop_total:pop_age3544)
+
+proportions <- births_prop %>% 
+  full_join(pop_prop, by = c("state", "year")) %>% 
+  mutate(age1524_rate = births_age1524 / pop_age1524,
+         age2534_rate = births_age2534 / pop_age2534,
+         age3544_rate = births_age3544 / pop_age3544,
+         nohs_rate = births_nohs / pop_nohs,
+         hs_rate = births_hs / pop_hs,
+         somecoll_rate = births_somecoll / pop_somecoll,
+         coll_rate = births_coll / pop_coll,
+         married_rate = births_married / pop_married,
+         unmarried_rate = births_unmarried / pop_unmarried,
+         medicaid_rate = births_medicaid / pop_medicaid,
+         nonmedicaid_rate = births_nonmedicaid / pop_nonmedicaid,
+         nhblack_rate = norm_births_nhblack / pop_nhblack,
+         nhwhite_rate = norm_births_nhwhite / pop_nhwhite,
+         hisp_rate = norm_births_hisp / pop_hisp,
+         otherrace_rate = norm_births_otherraceeth / pop_otherraceeth)
+
+#creating rate by births_age1524/pop_age1524
+proportions |>
+  select(year, age1524_rate:otherrace_rate, median_income) |>
+  cor(use = "complete.obs") |>
+  corrplot(addCoef.col = 1, , number.cex = 0.6, order = "hclust")
+
+#creating births rate by births_age1524/total_births
+population_update |>
+  select(year, prop_births_1524:prop_births_otherraceeth, median_income) |>
+  cor(use = "complete.obs") |>
+  corrplot(addCoef.col = 1, , number.cex = 0.6, order = "hclust")
+```
