@@ -547,6 +547,7 @@ densities on the side of the plots
 
 problems at the end
 
+## Fertility Rate Calculations
 ```{r}
 # births_deaths |>
 #   select(year, norm_total_births) |>
@@ -576,4 +577,87 @@ full_model <- lm(fertility_rate_us ~ ., data = birth_rates) %>%
   step(direction = "backward")
 library(car)
 vif(full_model)
+
+pop_year <- fertility_mortality |> select(year,matches("pop_age[0-9]")) |> unique() |>
+  aggregate(. ~ year, FUN=sum)
+
+total_fertilityUS <- fertility_mortality |> select(year,matches("births_age[0-9]")) |>
+  aggregate(. ~ year, FUN=sum) |>
+  left_join(pop_year) |>
+  mutate(fert_age1524 = births_age1524/pop_age1524 * 1000,
+         fert_age2534 = births_age2534/pop_age2534 * 1000,
+         fert_age3544 = births_age3544/pop_age3544 * 1000) |>
+  select(year,starts_with("fert_age")) |>
+  mutate(total_fer = (fert_age1524+fert_age2534+fert_age3544)*10) 
+
+print(total_fertilityUS)
+
+# mutate states to regions, get the total population by region for each year
+pop_region <- fertility_mortality |> select(state,year,matches("pop_age[0-9]")) |> unique() |>
+mutate(region = case_when(
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |>
+  select(-state) |>
+  group_by(region,year) |>
+  summarize(across(everything(), sum))
+
+# Get TFR by region by year
+TFR_region <- fertility_mortality |> select(state,year,matches("births_age[0-9]")) |>
+mutate(region = case_when(
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |>
+  select(-state) |>
+  group_by(region,year) |>
+  summarize(across(everything(), sum)) |>
+  left_join(pop_region) |>
+  mutate(fert_age1524 = births_age1524/pop_age1524 * 1000,
+         fert_age2534 = births_age2534/pop_age2534 * 1000,
+         fert_age3544 = births_age3544/pop_age3544 * 1000) |>
+  select(year,starts_with("fert_age")) |>
+  mutate(total_fer = (fert_age1524+fert_age2534+fert_age3544)*10) 
+
+print(TFR_region)
+
+# POPULATION by Ethnicity by Region
+popEth_region <- fertility_mortality |> select(state,year,pop_nhblack,pop_nhwhite,pop_hisp,pop_otherraceeth) |> unique() |>
+mutate(region = case_when(
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |>
+  select(-state) |>
+  group_by(region,year) |>
+  summarize(across(everything(), sum))
+
+# Get TFR by eth by region by year
+EthRegion_TFR <- fertility_mortality |> select(state,year,norm_births_nhblack,norm_births_nhwhite,norm_births_hisp,norm_births_otherraceeth) |>
+mutate(region = case_when(
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |>
+  select(-state) |>
+  group_by(region,year) |>
+  summarize(across(everything(), sum)) |>
+  left_join(popEth_region) |>
+  mutate(fert_nhblack = norm_births_nhblack/pop_nhblack * 1000*30,
+         fert_nhwhite = norm_births_nhwhite/pop_nhwhite * 1000*30,
+         fert_hisp = norm_births_hisp/pop_hisp * 1000*30,
+         fert_otherraceeth = norm_births_otherraceeth/pop_otherraceeth*1000*30) |>
+  select(year,starts_with("fert_"))
+
+print(EthRegion_TFR)
 ```
+Births per 1000 woman calculation source: (https://www.cdc.gov/nchs/pressroom/nchs_press_releases/2024/20240525.htm)
