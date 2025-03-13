@@ -40,4 +40,7 @@ population_update |>
   select(year, prop_births_1524:prop_births_otherraceeth, median_income) |>
   cor(use = "complete.obs") |>
   corrplot(addCoef.col = 1, , number.cex = 0.6, order = "hclust")
+
+#poverty rate, SNAP rate, median income, 
+
 ```

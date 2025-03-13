@@ -1,0 +1,22 @@
+---
+title: "mm"
+format: html
+editor: visual
+---
+
+```{r}
+library(janitor)
+demo_2023 <- read.csv('/Users/lezelly/Desktop/demo_2023.csv')
+
+demo_2023 <- demo_2023 %>% 
+  mutate(new_column = ifelse(row_number() == 2, "white_", NA))
+```
+
+```{r}
+
+demog_3 <- read.csv('/Users/lezelly/Desktop/demog3.csv')
+
+demog_3 <- demog_3 %>% 
+  clean_names() %>% 
+  pivot_wider(names_from = label_grouping, values_from = ends_with("_estimate"))
+```
