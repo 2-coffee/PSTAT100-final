@@ -580,12 +580,51 @@ full_model <- lm(fertility_rate_us ~ ., data = birth_rates) %>%
   step(direction = "backward")
 library(car)
 vif(full_model)
+```
 
-pop_year <- fertility_mortality |> select(year,matches("pop_age[0-9]")) |> unique() |>
-  aggregate(. ~ year, FUN=sum)
+## Infant Mortality 
 
-total_fertilityUS <- fertility_mortality |> select(year,matches("births_age[0-9]")) |>
-  aggregate(. ~ year, FUN=sum) |>
+```{r}
+# BIRTH_DEATHS has Infant Mortality by race if we are interested in that
+#  By state by year Grouped to minority.
+# calculation = minority_infant_mort/sum(births in minorities)
+births_deaths1 <- births_deaths |>
+  select(state,year,starts_with("deaths"),starts_with("norm_births"),starts_with("births_age"))
+
+
+infantMort_eth <- births_deaths1 |>
+  select(state,year,deaths_nhblack,deaths_nhwhite,deaths_hisp,deaths_otherraceeth, 
+         matches("norm_births_[a-z]")) |>
+  mutate(minority_deaths = deaths_nhblack + deaths_hisp + deaths_otherraceeth,
+         minority_births = norm_births_nhblack + norm_births_hisp + norm_births_otherraceeth) |>
+  mutate(Minority_mort = minority_deaths/minority_births,
+         Nonminority_mort = deaths_nhwhite/norm_births_nhwhite,
+         InfantMort_GAP = (Minority_mort - Nonminority_mort)*100) |> 
+  filter(year!=2020) |>
+  select(state,year,Minority_mort,Nonminority_mort,InfantMort_GAP)
+print(infantMort_eth)
+## Mortality numbers are very small, we might have to transform it a bit
+infantMort_eth1 <- infantMort_eth |> select(state,year,InfantMort_GAP)
+```
+
+Get total fertility by state by year.  
+Transform fertility data to get by Minority and Non-minority
+
+## Fertility Rates
+
+```{r}
+  
+# GET TOTAL FERTILITY RATE BY STATE BY YEAR
+# Deselect year=2020 because Census data does not have 2020 data
+
+pop_year <- fertility_mortality |> select(year,state,matches("pop_age[0-9]")) |> filter(year!=2020) |>
+  unique() |>
+  group_by(state,year)
+
+total_fertilityUS <- fertility_mortality |> select(year,state,matches("births_age[0-9]")) |> 
+  filter(year!=2020) |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |>
   left_join(pop_year) |>
   mutate(fert_age1524 = births_age1524/pop_age1524 * 1000,
          fert_age2534 = births_age2534/pop_age2534 * 1000,
@@ -595,9 +634,18 @@ total_fertilityUS <- fertility_mortality |> select(year,matches("births_age[0-9]
 
 print(total_fertilityUS)
 
+# GET it by state and year to merge with Census data later
+
+TFR_USstyr <- total_fertilityUS |> select(state,year,total_fer) |>
+  mutate(total_fer = total_fer/1000)
+```
+
+
+### Region
+```{r}
 # mutate states to regions, get the total population by region for each year
 pop_region <- fertility_mortality |> select(state,year,matches("pop_age[0-9]")) |> unique() |>
-mutate(region = case_when(
+mutate(region = case_when(          # rename into regions
            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
            state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
            state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
@@ -631,7 +679,7 @@ print(TFR_region)
 
 # POPULATION by Ethnicity by Region
 popEth_region <- fertility_mortality |> select(state,year,pop_nhblack,pop_nhwhite,pop_hisp,pop_otherraceeth) |> unique() |>
-mutate(region = case_when(
+mutate(region = case_when(        
            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
            state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
            state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
@@ -644,7 +692,7 @@ mutate(region = case_when(
 
 # Get TFR by eth by region by year
 EthRegion_TFR <- fertility_mortality |> select(state,year,norm_births_nhblack,norm_births_nhwhite,norm_births_hisp,norm_births_otherraceeth) |>
-mutate(region = case_when(
+mutate(region = case_when(          # rename into regions
            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
            state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
            state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
@@ -663,4 +711,155 @@ mutate(region = case_when(
 
 print(EthRegion_TFR)
 ```
+
+### Calculate Fertility Difference
+```{r}
+popEth_state <- fertility_mortality |> select(state,year,pop_nhblack,pop_nhwhite,pop_hisp,pop_otherraceeth) |> unique() |>
+  group_by(state,year) |>
+  mutate(pop_minority = pop_nhblack + pop_hisp + pop_otherraceeth)
+
+TFR_GAP <- fertility_mortality |> 
+  select(state,year,norm_births_nhblack,norm_births_nhwhite,
+         norm_births_hisp,norm_births_otherraceeth) |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |>
+  left_join(popEth_state) |> # Minority Fertility as eth_birth/pop_minority
+  mutate(Minority_fer = (norm_births_nhblack/pop_minority + norm_births_hisp/pop_minority + norm_births_otherraceeth/pop_minority) * 30*1000, # multiply by 30 to correct for age gap
+         Nonminority_fer = norm_births_nhwhite/pop_nhwhite * 1000*30,
+  TFR_gap = (Minority_fer - Nonminority_fer)/1000
+         ) |>
+  select(year,Minority_fer,Nonminority_fer,TFR_gap)
+
+print(TFR_GAP)
+
+TFR_GAP1 <- TFR_GAP |> ungroup() |> # for merging with Census data
+  select(state,year,TFR_gap) 
+
+```
+
 Births per 1000 woman calculation source: (https://www.cdc.gov/nchs/pressroom/nchs_press_releases/2024/20240525.htm)
+
+# Census Data
+
+```{r, cache=TRUE, message=FALSE}
+pop_2016 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2016.csv")
+pop_2017 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2017.csv")
+pop_2018 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2018.csv")
+pop_2019 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2019.csv")
+pop_2021 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2021.csv")
+pop_2022 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2022.csv")
+pop_2023 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2023.csv")
+
+```
+
+```{r}
+# remove unneeded columns and stack each year. 
+
+drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
+
+pop_2016m1 <- pop_2016
+pop_2017m1 <- pop_2017
+pop_2018m1 <- pop_2018
+pop_2019m1 <- pop_2019
+pop_2021m1 <- pop_2021
+pop_2022m1 <- pop_2022
+pop_2023m1 <- pop_2023
+
+clean_df <- function(df, drop_c){
+  # function to compactly reorganize dataframes
+  df1 <- df
+  df1 <- df1 |>select(year,everything(),-all_of(drop_c)) |>
+    tidyr::separate(ethnicity,"ethnicity",extra="drop")
+  return(df1)
+}
+pop_2016m2 <- pop_2016m1 |> clean_df(drop_cols)
+pop_2017m2 <- pop_2017m1 |> clean_df(drop_cols)
+pop_2018m2 <- pop_2018m1|> clean_df(drop_cols)
+pop_2019m2 <- pop_2019m1|> clean_df(drop_cols)
+pop_2021m2 <- pop_2021m1|> clean_df(drop_cols)
+pop_2022m2 <- pop_2022m1|> clean_df(drop_cols)
+pop_2023m2 <- pop_2023m1 |> select(year,everything(),-all_of(drop_cols)) |>
+    tidyr::separate(population_group,"ethnicity",extra="drop")
+
+pop_pre2020 <- rbind(pop_2016m2,pop_2017m2,pop_2018m2,pop_2019m2)
+pop_post2020 <- rbind(pop_2021m2,pop_2022m2,pop_2023m2)
+main_pop <- rbind(pop_pre2020,pop_post2020)
+
+
+```
+
+## Convert Percentages to raw values
+
+```{r, cache=TRUE}
+main_pop1 <- main_pop |>
+  mutate(
+    across(matches("total_[a-z]+_pop"), ~ .x/100*total_pop),
+    across(matches("pop_age[0-9]"), ~ .x/100*total_pop),
+    across(matches("ms_[a-z]"), ~ .x/100*marital_status_pop),
+    across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/100*edu_attain_pop),
+    SNAP = SNAP/100,
+    across(matches("hc_[a-z]"), ~ .x/100*health_cov_pop)
+  )
+```
+
+## Normalize each variable to tota population 
+
+```{r}
+
+# group by state and year, normalize all key variables to total_pop
+main_pop2 <- main_pop1 |> select(-ethnicity) |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |> ungroup() |>
+  mutate(
+  across(matches("total_[a-z]+_pop"), ~ .x/total_pop),
+  across(matches("pop_age[0-9]"), ~ .x/total_pop),
+  across(matches("ms_[a-z]"), ~ .x/total_pop),
+  across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/total_pop),
+  across(matches("hc_[a-z]"), ~ .x/total_pop)
+  )
+```
+
+## EDA
+```{r}
+main_pop3 <- main_pop2 |> 
+  select(-c(total_pop,marital_status_pop,edu_attain_pop,income_households,health_cov_pop)) 
+
+
+# We should separate the variables first, there's too many to graph?
+
+main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> # Join CDC data with Census
+  left_join(TFR_GAP1) |>
+  left_join(infantMort_eth1)
+
+main_popLong <- main_pop4 |>
+  pivot_longer(
+    cols = !c(state,year,TFR_gap,InfantMort_GAP),
+    names_to = "key_var", # name into 1 column
+    values_to = "pop_proportion"
+  ) |>
+  pivot_longer(cols = one_of(c("TFR_gap", "InfantMort_GAP")), 
+               names_to = "Maternal_Infant", 
+               values_to = "Gap")
+
+main_popLong |> ggplot(aes(x=pop_proportion, y=Gap, color=Maternal_Infant)) +
+  geom_point(alpha=.5) +
+  facet_wrap(vars(key_var), scale="free")
+
+```
+
+
+```{r}
+
+main_popLong |>
+  ggplot(aes(x=`pop_proportion`, y=Gap, color=as.factor(year))) +
+  geom_smooth(method=lm, aes(linetype=Maternal_Infant)) +
+  facet_wrap(vars(pop_proportion), scales="free_x") + 
+  colorspace::scale_color_discrete_sequential(palette="Viridis")
+
+```
+
+
+
+
+
+
