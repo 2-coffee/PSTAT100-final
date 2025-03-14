@@ -593,6 +593,8 @@ births_deaths1 <- births_deaths |>
 
 
 infantMort_eth <- births_deaths1 |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |>
   select(state,year,deaths_nhblack,deaths_nhwhite,deaths_hisp,deaths_otherraceeth, 
          matches("norm_births_[a-z]")) |>
   mutate(minority_deaths = deaths_nhblack + deaths_hisp + deaths_otherraceeth,
@@ -601,7 +603,9 @@ infantMort_eth <- births_deaths1 |>
          Nonminority_mort = deaths_nhwhite/norm_births_nhwhite,
          InfantMort_GAP = (Minority_mort - Nonminority_mort)*100) |> 
   filter(year!=2020) |>
-  select(state,year,Minority_mort,Nonminority_mort,InfantMort_GAP)
+  select(state,year,Minority_mort,Nonminority_mort,InfantMort_GAP) |>
+  ungroup() 
+
 print(infantMort_eth)
 ## Mortality numbers are very small, we might have to transform it a bit
 infantMort_eth1 <- infantMort_eth |> select(state,year,InfantMort_GAP)
@@ -637,7 +641,8 @@ print(total_fertilityUS)
 # GET it by state and year to merge with Census data later
 
 TFR_USstyr <- total_fertilityUS |> select(state,year,total_fer) |>
-  mutate(total_fer = total_fer/1000)
+  mutate(total_fer = total_fer/1000) |>
+  ungroup()
 ```
 
 
@@ -733,7 +738,8 @@ TFR_GAP <- fertility_mortality |>
 print(TFR_GAP)
 
 TFR_GAP1 <- TFR_GAP |> ungroup() |> # for merging with Census data
-  select(state,year,TFR_gap) 
+  select(state,year,TFR_gap) |>
+  filter(year != 2020)
 
 ```
 
@@ -742,14 +748,22 @@ Births per 1000 woman calculation source: (https://www.cdc.gov/nchs/pressroom/nc
 # Census Data
 
 ```{r, cache=TRUE, message=FALSE}
-pop_2016 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2016.csv")
-pop_2017 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2017.csv")
-pop_2018 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2018.csv")
-pop_2019 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2019.csv")
-pop_2021 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2021.csv")
-pop_2022 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2022.csv")
-pop_2023 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2023.csv")
+# pop_2016 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2016.csv")
+# pop_2017 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2017.csv")
+# pop_2018 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2018.csv")
+# pop_2019 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2019.csv")
+# pop_2021 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2021.csv")
+# pop_2022 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2022.csv")
+# pop_2023 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2023.csv")
 
+
+pop_2016 <- read.csv("~/Desktop/pop_profiles/pop_profile_2016.csv")
+pop_2017 <- read.csv("~/Desktop/pop_profiles/pop_profile_2017.csv")
+pop_2018 <- read.csv("~/Desktop/pop_profiles/pop_profile_2018.csv")
+pop_2019 <- read.csv("~/Desktop/pop_profiles/pop_profile_2019.csv")
+pop_2021 <- read.csv("~/Desktop/pop_profiles/pop_profile_2021.csv")
+pop_2022 <- read.csv("~/Desktop/pop_profiles/pop_profile_2022.csv")
+pop_2023 <- read.csv("~/Desktop/pop_profiles/pop_profile_2023.csv")
 ```
 
 ```{r}
@@ -802,7 +816,7 @@ main_pop1 <- main_pop |>
   )
 ```
 
-## Normalize each variable to tota population 
+## Normalize each variable to total population 
 
 ```{r}
 
@@ -828,8 +842,8 @@ main_pop3 <- main_pop2 |>
 # We should separate the variables first, there's too many to graph?
 
 main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> # Join CDC data with Census
-  left_join(TFR_GAP1) |>
-  left_join(infantMort_eth1)
+  left_join(TFR_GAP1, by = c("state", "year")) |>
+  left_join(infantMort_eth1, by = c("state", "year"))
 
 main_popLong <- main_pop4 |>
   pivot_longer(
@@ -842,9 +856,119 @@ main_popLong <- main_pop4 |>
                values_to = "Gap")
 
 main_popLong |> ggplot(aes(x=pop_proportion, y=Gap, color=Maternal_Infant)) +
-  geom_point(alpha=.5) +
+  geom_point(alpha=.6) +
   facet_wrap(vars(key_var), scale="free")
 
+```
+```{r}
+main_pop4 |>
+  select(-c("state", "year")) |>
+  cor(use = "complete.obs") |>
+  corrplot(addCoef.col = 1, , number.cex = 0.6)
+  
+# proportion of people with college degree 
+# 
+# Total Fertility Rate(TFR) \~ edu_attainment + income_median + snap + health insurance
+#health insurance is required
+
+lr_state <- main_pop4 |>
+  select(-c(starts_with("ms_"), "TFR_gap", "InfantMort_GAP", starts_with("pop_age"))) |>
+  left_join(TFR_USstyr) #|>
+  # pivot_longer(
+  #   cols = starts_with("edu"),
+  #   names_to = "edu_attain", # name into 1 column
+  #   values_to = "edu_values"
+  # ) |>
+  # pivot_longer(
+  #   cols = starts_with("hc_"),
+  #   names_to = "health_ins", # name into 1 column
+  #   values_to = "ins_rate"
+  # ) 
+
+lr_state16 <- lr_state |>
+  filter(year == 2016) |> 
+  pivot_longer(
+    cols = starts_with("edu"),
+    names_to = "edu_attain", # name into 1 column
+    values_to = "edu_values"
+  ) |>
+  pivot_longer(
+    cols = starts_with("hc_"),
+    names_to = "health_ins", # name into 1 column
+    values_to = "ins_rate"
+  ) 
+
+lr_state17 <- lr_state |>
+  filter(year == 2017) 
+  
+
+lr_state18 <- lr_state |>
+  filter(year == 2018)
+
+lr_state19 <- lr_state |>
+  filter(year == 2019)
+
+lr_state21 <- lr_state |>
+  filter(year == 2021)
+
+lr_state22 <- lr_state |>
+  filter(year == 2022)
+
+lr_state23 <- lr_state |>
+  filter(year == 2023)
+
+lr_al <- lr_state |>
+  filter(state == "Alabama")
+```
+```{r}
+results <- lr_state %>%
+  group_by(state, year) %>%
+  nest() %>%  # Nest data per state-year
+  mutate(model = map(data, ~ lm(total_fer ~ edu_values + health_ins + SNAP, data = .x)),  # Run regression
+         results = map(model, tidy),  # Extract coefficients
+         r_squared = map_dbl(model, ~ summary(.x)$r.squared)  # Extract R-squared
+  ) %>%
+  unnest(results) %>%  # Expand coefficients into a table
+  select(state, year, term, estimate, std.error, statistic, p.value, r_squared)  # Keep relevant columns
+
+# View results
+print(results)
+```
+```{r}
+
+lin_reg <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
+summary(lin_reg)
+
+#pivoting, did not work
+lin <- lm(total_fer ~ income_median + edu_values + ins_rate, data = lr_state16)
+summary(lin)
+
+#doing one state and all years and did not work
+lin_al <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_al)
+summary(lin_al)
+```
+```{r}
+no_state <- main_pop4 |>
+  select(-c("state")) 
+pca <- prcomp(no_state, center = TRUE, scale. = TRUE)
+
+#pca$rotation
+pca_var <- tibble(pc = 1:7,
+  eval = pca$sdev^2) |> #eigen values
+  mutate(var_explained = eval^2/sum(eval^2),
+         cum_var_explained = cumsum(var_explained))
+
+
+var_exp_plot <- pca_var |>
+  ggplot(aes(x = pc, y = var_explained)) + geom_col() + 
+  labs(x = "PC", y = "Variance Explained")
+
+cum_var_exp_plot <- pca_var |>
+  ggplot(aes(x = pc)) + geom_line(aes(y = cum_var_explained)) +
+  labs(x = "PC", y = "Cumulative Variance Explained") + ylim(0,1)
+  
+var_exp_plot + cum_var_exp_plot  
+sum(pca_var$var_explained[1:3])
 ```
 
 
