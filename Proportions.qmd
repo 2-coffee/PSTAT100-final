@@ -678,7 +678,7 @@ mutate(region = case_when(
          fert_age2534 = births_age2534/pop_age2534 * 1000,
          fert_age3544 = births_age3544/pop_age3544 * 1000) |>
   select(year,starts_with("fert_age")) |>
-  mutate(total_fer = (fert_age1524+fert_age2534+fert_age3544)*10) 
+  mutate(total_fer = (fert_age1524+fert_age2534+fert_age3544)*10 / 1000) 
 
 print(TFR_region)
 
@@ -944,7 +944,7 @@ lin <- lm(total_fer ~ income_median + edu_values + ins_rate, data = lr_state16)
 summary(lin)
 
 #doing one state and all years and did not work
-lin_al <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_al)
+lin_al <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median + hc_private + hc_public + hc_nohc, data = lr_al)
 summary(lin_al)
 ```
 ```{r}

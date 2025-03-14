@@ -1,0 +1,39 @@
+---
+title: "final_project"
+author: "Leslie Cervantes Rivera & Kevin Le"
+format: pdf
+execute:
+  echo: false
+---
+
+# Background
+
+The Infant Mortality and Fertility Rates Dataset provides data on infant mortality rates (measured as the number of infant deaths per 1,000 live births) and fertility rates (measured as the number of births per 1,000 women per year) across U.S. states. The Infant Mortality Dataset covers the years 2003 to 2023, while the Fertility Rates Dataset spans 2016 to 2023.
+
+Infant mortality refers to the death of baby that occurs before their first birthday. It is a key indicator of a population's overall health, reflecting the social, economic, and healthcare conditions within a state. High infant mortality rates could indicate insufficient healthcare access or inequalities in medical services, particularly in low-income and rural areas. Over the years, improvements in screening and treatment for illnesses, better obstetric management, and neonatal care have contributed in the declining of infant mortality rates, but disparities still exist within state and demographic groups. (<https://www.vcuhealth.org/news/infant-mortality-rates-declining-but-sudden-unexpected-infant-death-is-on-the-rise/#:~:text=Wolf%20attributes%20declining%20overall%20infant,media%20on%20infant%20sleep%20practices.>) (<https://www.nichd.nih.gov/health/topics/infant-mortality/topicinfo>)
+
+Fertility rate represents the total number of children a woman has during her reproductive years. It plays a crucial role in population growth and demographical planning, influencing services such as education, healthcare, and workforce development. From 2007 to 2022, the fertility rate has dropped by about 19%, influenced by the health of the economy, social, health, and historical events. These changes have long-term implications, as it leads to an aging population, smaller workforce, and economic strain on government budgets. (<https://www.britannica.com/topic/fertility-rate>) (<https://www.northwell.edu/news/the-latest/us-fertility-rate-decline-impact#:~:text=After%20a%20few%20decades%20of,historical%20events%E2%80%94affect%20family%20sizes.>)
+
+The Population Demographics dataset provides data on the years 2016 to 2023, including total population of sex and age, marital status, educational attainment, SNAP, and health insurance coverage based on ethnicity.
+
+## Data Sources
+
+### Birth Rates and Infant Mortality Datasets
+
+The datasets come from the Centers for Disease Control and Prevention (CDC), collected from anywhere a person receives healthcare. This may lead to limitations as it is up to the city, county, and state to decide what information is collected, and how and when it can be shared by the CDC. (<https://archive.cdc.gov/www_cdc_gov/surveillance/data-modernization/basics/where_does_our_data_come_from.html>)
+
+median income -\> 2020 reasoning <https://www.census.gov/data/developers/data-sets/acs-1year.2020.html#list-tab-843855098>
+
+### Population Demographics
+
+The dataset comes from the United States Census Bureau under the category American Community Survey named Selected Population Profile in the United States. The Census Bureau collects their data from respondents directly through censuses and surveys. Primary sources come from administrative data.
+
+# Question of Interest
+
+# Exploratory Data Analysis (EDA)
+
+## 
+
+```{r}
+print("Hello")
+```

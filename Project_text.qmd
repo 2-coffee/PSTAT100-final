@@ -15,13 +15,22 @@ Fertility rate represents the total number of children a woman has during her re
 
 The Maternal Mortality dataset provides national-level provisional counts of deaths among women who die during pregnancy or within 42 days of the termination of pregnancy, but not from accidental or incidental causes. These deaths are based on death records that have been received and processed by the National Center for Health Statistics (NCHS) as of a specified cutoff date. The dataset includes deaths among U.S. residents that occurred within the 50 states and the District of Columbia. Maternal mortality rates are calculated as deaths per 100,000 live births.
 
+The Population Demographics dataset provides data on the years 2016 to 2023, including total population of sex and age, marital status, educational attainment, SNAP, and health insurance coverage based on ethnicity. 
+
 ## Data Sources
+
+### Birth Rates and Infant Mortality Datasets 
 
 The datasets come from the Centers for Disease Control and Prevention (CDC), collected from anywhere a person receives healthcare. This may lead to limitations as it is up to the city, county, and state to decide what information is collected, and how and when it can be shared by the CDC. (<https://archive.cdc.gov/www_cdc_gov/surveillance/data-modernization/basics/where_does_our_data_come_from.html>)
 
 The NCHS obtains maternal death records from state vital registration offices through the Vital Statistics Cooperative Program. The estimates of maternal mortalities are derived from final mortality data for the years 2019 to 2021, and provisional data for the years 2022 to 2024. Provisional data reflects counts based on reports that are still being processed, while finalized data represents more complete counts of maternal deaths after thorough review and analysis. (Provisional Maternal Death Counts) https://www.cdc.gov/nchs/nvss/vsrr/provisional-maternal-deaths.htm
 
 median income -\> 2020 reasoning <https://www.census.gov/data/developers/data-sets/acs-1year.2020.html#list-tab-843855098>
+
+### Population Demographics
+
+The dataset comes from the United States Census Bureau under the category American Community Survey named Selected Population Profile in the United States. The Census Bureau collects their data from respondents directly through censuses and surveys. Primary sources come from administrative data.  
+
 
 ### Infant mortality
 
