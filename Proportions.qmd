@@ -949,26 +949,53 @@ summary(lin_al)
 ```
 ```{r}
 no_state <- main_pop4 |>
-  select(-c("state")) 
+  select(-c("state", starts_with("pop_age"), starts_with("ms_"))) 
 pca <- prcomp(no_state, center = TRUE, scale. = TRUE)
 
 #pca$rotation
-pca_var <- tibble(pc = 1:7,
-  eval = pca$sdev^2) |> #eigen values
-  mutate(var_explained = eval^2/sum(eval^2),
-         cum_var_explained = cumsum(var_explained))
+var_ratios <- (pca$sdev^2) / sum(pca$sdev^2)
 
+pca_var_explained <- data.frame(
+  Component = seq(1, length(var_ratios)),
+  Proportion_of_variance_explained = var_ratios
+)
+pca_var_explained <- pca_var_explained %>% 
+  mutate(Cumulative_variance_explained = cumsum(Proportion_of_variance_explained))
 
-var_exp_plot <- pca_var |>
-  ggplot(aes(x = pc, y = var_explained)) + geom_col() + 
-  labs(x = "PC", y = "Variance Explained")
-
-cum_var_exp_plot <- pca_var |>
-  ggplot(aes(x = pc)) + geom_line(aes(y = cum_var_explained)) +
-  labs(x = "PC", y = "Cumulative Variance Explained") + ylim(0,1)
+var_explained_plot <- ggplot(pca_var_explained, aes(x = Component)) +
   
-var_exp_plot + cum_var_exp_plot  
-sum(pca_var$var_explained[1:3])
+  # Proportion of variance explained (green line & points)
+  geom_line(aes(y = Proportion_of_variance_explained, color = "Proportion of variance explained"), size = 1) +
+  geom_point(aes(y = Proportion_of_variance_explained, color = "Proportion of variance explained"), size = 2) +
+  
+  # Cumulative variance explained (blue line & points)
+  geom_line(aes(y = Cumulative_variance_explained, color = "Cumulative variance explained"), size = 1) +
+  geom_point(aes(y = Cumulative_variance_explained, color = "Cumulative variance explained"), size = 2) +
+  
+  # Custom colors for lines
+  scale_color_manual(values = c("Proportion of variance explained" = "#57A44C", 
+                                "Cumulative variance explained" = "#5276A7")) +
+  
+  # Axis labels and theme adjustments
+  labs(x = "Component", y = "Variance Explained", color = "Legend") +
+  theme_minimal()
+print(var_explained_plot)
+``` 
+```{r}
+num_pc <- 5
+loading_df <- pca$rotation[, 1:num_pc]
+loading_plot_df <- loading_df %>% 
+  as.data.frame() %>% 
+  tibble::rownames_to_column(var = "Variable") %>% 
+  pivot_longer(cols = -Variable, names_to = "Principal_Component",
+               values_to = "Loading")
+loading_plot_df <- loading_plot_df %>% 
+  mutate(zero = 0)
+
+loadings_plot <- ggplot(loading_plot_df, aes(x = Loading, y = Variable, color = Principal_Component)) +
+geom_line(aes(group = Variable)) + geom_point() + geom_vline(aes(xintercept = zero), color = "black", linetype = "dashed", size = 0.5) + facet_wrap(~ Principal_Component, scales = "free_y") + labs(x = "Loading", y = "", color = "Principal Component") + theme_minimal() + theme(legend.position = "none")
+
+print(loadings_plot)
 ```
 
 
