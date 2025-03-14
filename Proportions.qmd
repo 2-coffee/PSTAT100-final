@@ -682,6 +682,8 @@ mutate(region = case_when(
 
 print(TFR_region)
 
+TFR_region1 <- TFR_region |> filter(year!=2020)
+
 # POPULATION by Ethnicity by Region
 popEth_region <- fertility_mortality |> select(state,year,pop_nhblack,pop_nhwhite,pop_hisp,pop_otherraceeth) |> unique() |>
 mutate(region = case_when(        
@@ -715,6 +717,8 @@ mutate(region = case_when(          # rename into regions
   select(year,starts_with("fert_"))
 
 print(EthRegion_TFR)
+
+EthRegion_TFR1 <- EthRegion_TFR |> filter(year!=2020)
 ```
 
 ### Calculate Fertility Difference
@@ -733,13 +737,13 @@ TFR_GAP <- fertility_mortality |>
          Nonminority_fer = norm_births_nhwhite/pop_nhwhite * 1000*30,
   TFR_gap = (Minority_fer - Nonminority_fer)/1000
          ) |>
-  select(year,Minority_fer,Nonminority_fer,TFR_gap)
+  select(year,Minority_fer,Nonminority_fer,TFR_gap) |> ungroup()
 
 print(TFR_GAP)
 
 TFR_GAP1 <- TFR_GAP |> ungroup() |> # for merging with Census data
   select(state,year,TFR_gap) |>
-  filter(year != 2020)
+  filter(year!=2020)
 
 ```
 
@@ -748,22 +752,14 @@ Births per 1000 woman calculation source: (https://www.cdc.gov/nchs/pressroom/nc
 # Census Data
 
 ```{r, cache=TRUE, message=FALSE}
-# pop_2016 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2016.csv")
-# pop_2017 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2017.csv")
-# pop_2018 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2018.csv")
-# pop_2019 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2019.csv")
-# pop_2021 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2021.csv")
-# pop_2022 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2022.csv")
-# pop_2023 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2023.csv")
+pop_2016 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2016.csv")
+pop_2017 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2017.csv")
+pop_2018 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2018.csv")
+pop_2019 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2019.csv")
+pop_2021 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2021.csv")
+pop_2022 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2022.csv")
+pop_2023 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2023.csv")
 
-
-pop_2016 <- read.csv("~/Desktop/pop_profiles/pop_profile_2016.csv")
-pop_2017 <- read.csv("~/Desktop/pop_profiles/pop_profile_2017.csv")
-pop_2018 <- read.csv("~/Desktop/pop_profiles/pop_profile_2018.csv")
-pop_2019 <- read.csv("~/Desktop/pop_profiles/pop_profile_2019.csv")
-pop_2021 <- read.csv("~/Desktop/pop_profiles/pop_profile_2021.csv")
-pop_2022 <- read.csv("~/Desktop/pop_profiles/pop_profile_2022.csv")
-pop_2023 <- read.csv("~/Desktop/pop_profiles/pop_profile_2023.csv")
 ```
 
 ```{r}
@@ -816,7 +812,7 @@ main_pop1 <- main_pop |>
   )
 ```
 
-## Normalize each variable to total population 
+## Normalize each variable to tota population 
 
 ```{r}
 
@@ -831,6 +827,33 @@ main_pop2 <- main_pop1 |> select(-ethnicity) |>
   across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/total_pop),
   across(matches("hc_[a-z]"), ~ .x/total_pop)
   )
+```
+```{r}
+# Census By region
+main_popRegion <- main_pop1 |> select(-ethnicity) |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |> ungroup() |>
+mutate(region = case_when(          # rename into regions
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |> select(-state) |>
+  group_by(region, year) |>
+  summarize(across(everything(), sum)) |> ungroup()
+
+main_popRegion1 <- main_popRegion |>
+  mutate(
+  across(matches("total_[a-z]+_pop"), ~ .x/total_pop),
+  across(matches("pop_age[0-9]"), ~ .x/total_pop),
+  across(matches("ms_[a-z]"), ~ .x/total_pop),
+  across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/total_pop),
+  across(matches("hc_[a-z]"), ~ .x/total_pop)
+  )
+
+main_popRegion2 <- main_popRegion1 |>
+  left_join(TFR_region1)
 ```
 
 ## EDA
