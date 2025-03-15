@@ -280,6 +280,15 @@ main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> # Join CDC
 
 # Exploratory Data Analysis (EDA)
 
+## Correlation Matrix
+
+```{r}
+main_pop4 |>
+  select(-c("state", "year")) |>
+  cor(use = "complete.obs") |>
+  corrplot()
+```
+
 # Linear Regression
 
 In this part, we'll use linear regression to see which predictors are significant for each year. We are going to regress total fertility on education attainment, economic indicators, health coverage, and infant mortality.
@@ -421,6 +430,28 @@ geom_line(aes(group = Variable)) + geom_point() + geom_vline(aes(xintercept = ze
 
 print(loadings_plot)
 ```
+
+[Name for PC1:]{.underline} *"Health Outcomes"*
+
+*The variables that are most influential are `hc_private`*, `hc_public`, and `hc_nohc`, `edu_bach`, and `edu_less_hs`. Private health coverage suggests individuals have better access to quality healthcare and Bachelor's degree suggests better access to resources, jobs, or healthcare due to their higher education level. However, public health coverage and no coverage suggest limited to no healthcare services. Less than high school education is typically viewed as lower income and fewer job opportunities.
+
+Positive PC1 represents individuals with better health outcomes due to higher education and better health coverage, while negative PC1 represents those with worse health outcomes due to lower education and limited to no health coverage.
+
+[Name for PC2:]{.underline} *"?"*
+
+The variables that are most influential for PC2 are `edu_somecoll` and `income_median`. Positive PC2 represents individuals who may have an associates or some time college, which may provide more job opportunities and higher wages than those with lower degrees. Negative PC2 represents median income, which suggests individuals with lower income have less access to resources.
+
+[Name for PC3:]{.underline} *"Health Coverage"*
+
+The variables that are most influential for PC3 are `hc_nohc` and `hc_public`. PC3 contradicts government health coverage with no health coverage. This indicates states with a lower PC3 have a higher amount of individuals with public health coverage. While a higher PC3 score indicates a higher amount of individuals with no health coverage.
+
+[Name for PC4:]{.underline} *"Health Coverage"*
+
+The variables that are most influential for PC4 are `InfantMort_GAP` and `hc_nohc`. This indicates states with a higher PC4 score have a higher amount of gaps between minorities and non-minorities in infant mortality rates. While a lower PC4 score indicates states with higher amounts of individuals with no health coverage.
+
+[Name for PC5:]{.underline} *"Health Coverage"*
+
+The variables that are most influential for PC5 are `InfantMort_GAP` and `TFR_gap`. PC45contradicts population growth with population decline. This indicates states with a lower PC5 score have a greater gap of total fertility rate between minorities and non-minorities. While a higher PC5 score, indicates a greater gap of infant mortality rate between minoriites and non-minorities.
 
 # Sources
 
