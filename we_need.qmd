@@ -1,0 +1,508 @@
+---
+title: "we_need"
+format: pdf
+editor: visual
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(forcats)
+library(qtl2)
+library(janitor)
+library(corrplot)
+```
+
+```{r}
+fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv")
+infant_mortality_biannual_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/infant_mortality_biannual_data.csv")
+```
+
+```{r}
+fertility_update <- fertility_data %>%
+  filter(bmcode %in% c(1, 2, 3)) %>%  
+  group_by(state, year) %>%  
+  summarise(across(births_age1524:pop_age3544, ~sum(., na.rm = TRUE))) %>%  
+  mutate(bacode =1,
+         across(pop_total:pop_age3544, ~./3)) %>% 
+  ungroup() 
+
+fertility_update2 <- fertility_data %>%
+  filter(bmcode %in% c(4, 5, 6)) %>%  
+  group_by(state, year) %>%  
+  summarise(across(births_age1524:pop_age3544, ~sum(., na.rm = TRUE))) %>%  
+  mutate(bacode = 2,
+         across(pop_total:pop_age3544, ~./3)) %>% 
+  ungroup()
+
+fertility_merged <- bind_rows(fertility_update, fertility_update2)
+
+fertility_merged <- fertility_merged %>% 
+  filter(!year == 2024)
+
+infant_mortality_biannual_data |>
+  summarize(across(c(births_nhblack:births_otherraceeth, 
+                     deaths_nhblack, deaths_nhwhite, deaths_hisp, 
+                     deaths_noncon, deaths_neo, deaths_total), 
+                   ~ mean(is.na(.))))
+```
+
+```{r}
+fertility_merged2 <- fertility_merged %>% 
+  select(state:bacode) %>% 
+   mutate(
+  prop_births_1524 = births_age1524 / births_total,
+         prop_births_2534 = births_age2534 / births_total,
+         prop_births_3544 = births_age3544 / births_total,
+         prop_births_nohs = births_nohs / births_total,
+         prop_births_hs = births_hs / births_total,
+         prop_births_somecoll = births_somecoll / births_total,
+         prop_births_coll = births_coll / births_total,
+         prop_births_married = births_married / births_total,
+         prop_births_unmarried = births_unmarried / births_total,
+         prop_births_medicaid = births_medicaid / births_total,
+         prop_births_nhblack = births_nhblack / births_total,
+         prop_births_nhwhite = births_nhwhite / births_total,
+         prop_births_hisp = births_hisp / births_total,
+         prop_births_otherraceeth = births_otherraceeth / births_total,
+         # prop_1524 = pop_age1524 / pop_total,
+         # prop_2534 = pop_age2534 / pop_total,
+         # prop_3544 = pop_age3544 / pop_total,
+         # prop_nohs = pop_nohs / pop_total,
+         # prop_hs = pop_hs / pop_total,
+         # prop_somecoll = pop_somecoll / pop_total,
+         # prop_coll = pop_coll / pop_total,
+         # prop_married = pop_married /pop_total,
+         # prop_unmarried = pop_unmarried / pop_total,
+         # prop_medicaid = pop_medicaid / pop_total,
+         # prop_nblack = pop_nhblack / pop_total,
+         # prop_nwhite = pop_nhwhite / pop_total,
+         # prop_hisp = pop_hisp / pop_total,
+         # prop_otherraceeth = pop_otherraceeth / pop_total
+         fer_rate_1524 = (births_age1524 / pop_age1524),
+         fer_rate_2534 = (births_age2534 / pop_age2534),
+         fer_rate_3544 = (births_age3544 / pop_age3544),
+         repro_pop = pop_age1524 + pop_age2534 + pop_age3544,
+         # fertility_rate_state = 30 *(
+         #   (fer_rate_1524*(pop_age1524/repro_pop)) +
+         #     (fer_rate_2534*(pop_age2534/repro_pop)) +
+         #     (fer_rate_3544*(pop_age3544/repro_pop)))
+         )
+```
+
+```{r}
+infant_mort1 <- infant_mortality_biannual_data |>
+  rename("infant_births_total"=births_total) |>
+  mutate(across(starts_with("births_"), ~ .x/infant_births_total, .names="prop_{.col}")) |>
+  select( c(starts_with("deaths_"),starts_with("prop_births"), infant_births_total, state,year,bacode)) |>
+  filter(year >=2016) 
+
+infant_mort1 <- infant_mort1 |>
+  mutate(across(colnames(infant_mort1), ~ replace_na(.x,0)))
+
+
+fertil_merg_filter <- fertility_merged2 |> select(c(starts_with("prop_births"),births_total, state, year,bacode)) |> select(11:18)
+  
+prop_only_merge <- infant_mort1 |>
+  left_join(fertil_merg_filter, by=join_by(state,year,bacode)) |>
+  mutate(
+    norm_births_nhblack = (prop_births_nhblack.x + prop_births_nhblack.y)/2,
+    norm_births_nhwhite =( prop_births_nhwhite.x + prop_births_nhwhite.y)/2,
+    norm_births_hisp = (prop_births_hisp.x + prop_births_hisp.y)/2,
+    norm_births_otherraceeth = (prop_births_otherraceeth.x + prop_births_otherraceeth.y)/2,
+    norm_total_births = (infant_births_total+births_total)/2
+  ) |>
+  mutate(across(starts_with("norm_births_"), ~round(.x*norm_total_births,0), .names="{.col}")) |>
+  select(-c(starts_with("prop_"))) |>
+  mutate(across(starts_with("deaths_"), ~ round(.x/norm_total_births*1000, 2), .names="infantMort_{.col}")) #|>
+  #mutate(across(starts_with("norm_births_"), ~ round(.x/norm_total_births*1000, 2), .names#="fertilityRate_{.col}"))
+
+  
+fertility_mortality <- fertility_merged2 |>
+  left_join(infant_mortality_biannual_data, by = join_by(state,year, bacode)) |>
+  select(-c(ends_with(".x"), ends_with(".y"), starts_with("deaths"))) |>
+  left_join(prop_only_merge, by=join_by(state,year,bacode)) |>
+  mutate(fer_rate_nhblack = norm_births_nhblack / pop_nhblack,
+         fer_rate_nhwhite = norm_births_nhwhite / pop_nhwhite,
+         fer_rate_hisp = norm_births_hisp / pop_hisp,
+         fer_rate_otherraceeth = norm_births_otherraceeth / pop_otherraceeth)
+  
+#median_income <- read.csv('~/pstat100/final_project/median_income_2016_2023.csv')
+median_income <- read.csv('~/Desktop/median_income_2016_2023.csv')
+```
+
+```{r}
+births_deaths <- fertility_mortality %>% 
+  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:repro_pop, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth, pop_age1524:pop_age3544 ) %>% 
+  mutate(norm_total_births = round(norm_total_births, 0),
+         region = case_when(
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing"
+         ))
+
+population_update <- fertility_mortality %>% 
+  select(state, year, bacode, pop_total:pop_age3544, prop_births_1524:prop_births_otherraceeth)
+
+births_deaths <- births_deaths %>% 
+  left_join(median_income, by = c("state", "year"))
+
+population_update <- population_update %>% 
+  left_join(median_income, by = c("state", "year"))
+```
+
+```{r}
+pop_state <- fertility_mortality |> select(year,matches("pop_age[0-9]")) |> unique() |>
+  aggregate(. ~ year, FUN=sum)
+
+fertility_rates <- fertility_mortality |> select(year,matches("births_age[0-9]")) |>
+  aggregate(. ~ year, FUN=sum) |>
+  left_join(pop_state) |>
+  mutate(fert_age1524 = births_age1524/pop_age1524 * 1000,
+         fert_age2534 = births_age2534/pop_age2534 * 1000,
+         fert_age3544 = births_age3544/pop_age3544 * 1000) |>
+  select(year,starts_with("fert_age"), starts_with("pop_age"), starts_with("births_age")) |>
+  mutate(tfr = (fert_age1524+fert_age2534+fert_age3544) * 10 /1000,
+         gen_fr = ((births_age1524+births_age2534+births_age3544)/(pop_age1524 + pop_age2534 + pop_age3544))  * 1000)
+
+fertility_rates <- fertility_rates %>% 
+  select(year, tfr, gen_fr )
+
+births_deaths <- births_deaths %>% 
+  left_join(fertility_rates, by = "year")
+```
+
+```{r}
+births_deaths1 <- births_deaths |>
+  select(state,year,starts_with("deaths"),starts_with("norm_births"),starts_with("births_age"))
+
+
+infantMort_eth <- births_deaths1 |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |>
+  select(state,year,deaths_nhblack,deaths_nhwhite,deaths_hisp,deaths_otherraceeth, 
+         matches("norm_births_[a-z]")) |>
+  mutate(minority_deaths = deaths_nhblack + deaths_hisp + deaths_otherraceeth,
+         minority_births = norm_births_nhblack + norm_births_hisp + norm_births_otherraceeth) |>
+  mutate(Minority_mort = minority_deaths/minority_births,
+         Nonminority_mort = deaths_nhwhite/norm_births_nhwhite,
+         InfantMort_GAP = (Minority_mort - Nonminority_mort)*100) |> 
+  filter(year!=2020) |>
+  select(state,year,Minority_mort,Nonminority_mort,InfantMort_GAP) |>
+  ungroup() 
+
+print(infantMort_eth)
+## Mortality numbers are very small, we might have to transform it a bit
+infantMort_eth1 <- infantMort_eth |> select(state,year,InfantMort_GAP)
+
+infantMort1 <- births_deaths1 |> 
+  mutate(
+    total_mort = (deaths_total/(norm_births_nhblack + norm_births_nhwhite + norm_births_hisp + norm_births_otherraceeth))*1000
+  ) |>
+  select(state,year,total_mort)
+```
+
+```{r}
+pop_year <- fertility_mortality |> select(year,state,matches("pop_age[0-9]")) |> filter(year!=2020) |>
+  unique() |>
+  group_by(state,year)
+
+total_fertilityUS <- fertility_mortality |> select(year,state,matches("births_age[0-9]")) |> 
+  filter(year!=2020) |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |>
+  left_join(pop_year) |>
+  mutate(fert_age1524 = births_age1524/pop_age1524 * 1000,
+         fert_age2534 = births_age2534/pop_age2534 * 1000,
+         fert_age3544 = births_age3544/pop_age3544 * 1000) |>
+  select(year,starts_with("fert_age")) |>
+  mutate(total_fer = (fert_age1524+fert_age2534+fert_age3544)*10) 
+
+print(total_fertilityUS)
+
+# GET it by state and year to merge with Census data later
+
+TFR_USstyr <- total_fertilityUS |> select(state,year,total_fer) |>
+  mutate(total_fer = total_fer/1000) |>
+  ungroup()
+```
+
+```{r}
+# mutate states to regions, get the total population by region for each year
+pop_region <- fertility_mortality |> select(state,year,matches("pop_age[0-9]")) |> unique() |>
+mutate(region = case_when(          # rename into regions
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |>
+  select(-state) |>
+  group_by(region,year) |>
+  summarize(across(everything(), sum))
+
+# Get TFR by region by year
+TFR_region <- fertility_mortality |> select(state,year,matches("births_age[0-9]")) |>
+mutate(region = case_when(
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |>
+  select(-state) |>
+  group_by(region,year) |>
+  summarize(across(everything(), sum)) |>
+  left_join(pop_region) |>
+  mutate(fert_age1524 = births_age1524/pop_age1524 * 1000,
+         fert_age2534 = births_age2534/pop_age2534 * 1000,
+         fert_age3544 = births_age3544/pop_age3544 * 1000) |>
+  select(year,starts_with("fert_age")) |>
+  mutate(total_fer = (fert_age1524+fert_age2534+fert_age3544)*10 / 1000) 
+
+print(TFR_region)
+
+TFR_region1 <- TFR_region |> filter(year!=2020)
+
+# POPULATION by Ethnicity by Region
+popEth_region <- fertility_mortality |> select(state,year,pop_nhblack,pop_nhwhite,pop_hisp,pop_otherraceeth) |> unique() |>
+mutate(region = case_when(        
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |>
+  select(-state) |>
+  group_by(region,year) |>
+  summarize(across(everything(), sum))
+
+# Get TFR by eth by region by year
+EthRegion_TFR <- fertility_mortality |> select(state,year,norm_births_nhblack,norm_births_nhwhite,norm_births_hisp,norm_births_otherraceeth) |>
+mutate(region = case_when(          # rename into regions
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |>
+  select(-state) |>
+  group_by(region,year) |>
+  summarize(across(everything(), sum)) |>
+  left_join(popEth_region) |>
+  mutate(fert_nhblack = norm_births_nhblack/pop_nhblack * 1000*30,
+         fert_nhwhite = norm_births_nhwhite/pop_nhwhite * 1000*30,
+         fert_hisp = norm_births_hisp/pop_hisp * 1000*30,
+         fert_otherraceeth = norm_births_otherraceeth/pop_otherraceeth*1000*30) |>
+  select(year,starts_with("fert_"))
+
+print(EthRegion_TFR)
+
+EthRegion_TFR1 <- EthRegion_TFR |> filter(year!=2020)
+```
+
+```{r}
+#read pop files
+pop_2016 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2016.csv")
+pop_2017 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2017.csv")
+pop_2018 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2018.csv")
+pop_2019 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2019.csv")
+pop_2021 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2021.csv")
+pop_2022 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2022.csv")
+pop_2023 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2023.csv")
+
+pop_2016 <- read.csv("~/Desktop/pop_profiles/pop_profile_2016.csv")
+pop_2017 <- read.csv("~/Desktop/pop_profiles/pop_profile_2017.csv")
+pop_2018 <- read.csv("~/Desktop/pop_profiles/pop_profile_2018.csv")
+pop_2019 <- read.csv("~/Desktop/pop_profiles/pop_profile_2019.csv")
+pop_2021 <- read.csv("~/Desktop/pop_profiles/pop_profile_2021.csv")
+pop_2022 <- read.csv("~/Desktop/pop_profiles/pop_profile_2022.csv")
+pop_2023 <- read.csv("~/Desktop/pop_profiles/pop_profile_2023.csv")
+```
+
+```{r}
+#main pop
+drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
+
+pop_2016m1 <- pop_2016
+pop_2017m1 <- pop_2017
+pop_2018m1 <- pop_2018
+pop_2019m1 <- pop_2019
+pop_2021m1 <- pop_2021
+pop_2022m1 <- pop_2022
+pop_2023m1 <- pop_2023
+
+clean_df <- function(df, drop_c){
+  # function to compactly reorganize dataframes
+  df1 <- df
+  df1 <- df1 |>select(year,everything(),-all_of(drop_c)) |>
+    tidyr::separate(ethnicity,"ethnicity",extra="drop")
+  return(df1)
+}
+pop_2016m2 <- pop_2016m1 |> clean_df(drop_cols)
+pop_2017m2 <- pop_2017m1 |> clean_df(drop_cols)
+pop_2018m2 <- pop_2018m1|> clean_df(drop_cols)
+pop_2019m2 <- pop_2019m1|> clean_df(drop_cols)
+pop_2021m2 <- pop_2021m1|> clean_df(drop_cols)
+pop_2022m2 <- pop_2022m1|> clean_df(drop_cols)
+pop_2023m2 <- pop_2023m1 |> select(year,everything(),-all_of(drop_cols)) |>
+    tidyr::separate(population_group,"ethnicity",extra="drop")
+
+pop_pre2020 <- rbind(pop_2016m2,pop_2017m2,pop_2018m2,pop_2019m2)
+pop_post2020 <- rbind(pop_2021m2,pop_2022m2,pop_2023m2)
+main_pop <- rbind(pop_pre2020,pop_post2020)
+
+main_pop1 <- main_pop |>
+  mutate(
+    across(matches("total_[a-z]+_pop"), ~ .x/100*total_pop),
+    across(matches("pop_age[0-9]"), ~ .x/100*total_pop),
+    across(matches("ms_[a-z]"), ~ .x/100*marital_status_pop),
+    across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/100*edu_attain_pop),
+    SNAP = SNAP/100,
+    across(matches("hc_[a-z]"), ~ .x/100*health_cov_pop)
+  )
+
+main_popRegion <- main_pop1 |> select(-ethnicity) |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |> ungroup() |>
+mutate(region = case_when(          # rename into regions
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) 
+main_popRegion <- main_popRegion |> select(region,everything())
+
+#maybe run?
+main_popRegion1 <-main_popRegion |> select(-state) |>
+  group_by(region, year) |>
+  summarize(across(-c(income_median,SNAP), sum),
+            income_median = median(income_median),
+            SNAP = mean(SNAP)) |> ungroup()
+
+main_popRegion2 <- main_popRegion1 |>
+  mutate(
+  across(matches("total_[a-z]+_pop"), ~ .x/total_pop),
+  across(matches("pop_age[0-9]"), ~ .x/total_pop),
+  across(matches("ms_[a-z]"), ~ .x/total_pop),
+  across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/total_pop),
+  across(matches("hc_[a-z]"), ~ .x/total_pop)
+  )
+
+main_popRegion3 <- main_popRegion2 |>
+  left_join(TFR_region1)
+
+main_pop3 <- main_pop2 |> 
+  select(-c(total_pop,marital_status_pop,edu_attain_pop,income_households,health_cov_pop)) 
+
+main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> # Join CDC data with Census
+  left_join(TFR_GAP1, by = c("state", "year")) |>
+  left_join(infantMort_eth1, by = c("state", "year"))
+```
+
+```{r}
+#linear regression
+
+lr_state <- main_pop4 |>
+  select(-c(starts_with("ms_"), "TFR_gap", "InfantMort_GAP", starts_with("pop_age"))) |>
+  left_join(TFR_USstyr) |>
+  left_join(infantMort1)
+
+lr_state16 <- lr_state |>
+  filter(year == 2016) 
+
+lr_state17 <- lr_state |>
+  filter(year == 2017) 
+  
+lr_state18 <- lr_state |>
+  filter(year == 2018)
+
+lr_state19 <- lr_state |>
+  filter(year == 2019)
+
+lr_state21 <- lr_state |>
+  filter(year == 2021)
+
+lr_state22 <- lr_state |>
+  filter(year == 2022)
+
+lr_state23 <- lr_state |>
+  filter(year == 2023)
+
+lin_reg16 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
+summary(lin_reg16)
+
+lin_reg17 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
+summary(lin_reg17)
+
+lin_reg18 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
+summary(lin_reg18)
+
+lin_reg19 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
+summary(lin_reg19)
+
+lin_reg21 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
+summary(lin_reg21)
+
+lin_reg22 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
+summary(lin_reg22)
+
+lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
+summary(lin_reg23)
+```
+
+```{r}
+#pca
+no_state <- main_pop4 |>
+  select(-c("state", starts_with("pop_age"), starts_with("ms_"),year)) 
+
+pca <- prcomp(no_state, center = TRUE, scale. = TRUE)
+
+#pca$rotation
+var_ratios <- (pca$sdev^2) / sum(pca$sdev^2)
+
+pca_var_explained <- data.frame(
+  Component = seq(1, length(var_ratios)),
+  Proportion_of_variance_explained = var_ratios
+)
+pca_var_explained <- pca_var_explained %>% 
+  mutate(Cumulative_variance_explained = cumsum(Proportion_of_variance_explained))
+
+var_explained_plot <- ggplot(pca_var_explained, aes(x = Component)) +
+  
+  # Proportion of variance explained (green line & points)
+  geom_line(aes(y = Proportion_of_variance_explained, color = "Proportion of variance explained"), size = 1) +
+  geom_point(aes(y = Proportion_of_variance_explained, color = "Proportion of variance explained"), size = 2) +
+  
+  # Cumulative variance explained (blue line & points)
+  geom_line(aes(y = Cumulative_variance_explained, color = "Cumulative variance explained"), size = 1) +
+  geom_point(aes(y = Cumulative_variance_explained, color = "Cumulative variance explained"), size = 2) +
+  
+  # Custom colors for lines
+  scale_color_manual(values = c("Proportion of variance explained" = "#57A44C", 
+                                "Cumulative variance explained" = "#5276A7")) +
+  
+  # Axis labels and theme adjustments
+  labs(x = "Component", y = "Variance Explained", color = "Legend") +
+  theme_minimal()
+print(var_explained_plot)
+num_pc <- 5
+loading_df <- pca$rotation[, 1:num_pc]
+loading_plot_df <- loading_df %>% 
+  as.data.frame() %>% 
+  tibble::rownames_to_column(var = "Variable") %>% 
+  pivot_longer(cols = -Variable, names_to = "Principal_Component",
+               values_to = "Loading")
+loading_plot_df <- loading_plot_df %>% 
+  mutate(zero = 0)
+
+loadings_plot <- ggplot(loading_plot_df, aes(x = Loading, y = Variable, color = Principal_Component)) +
+geom_line(aes(group = Variable)) + geom_point() + geom_vline(aes(xintercept = zero), color = "black", linetype = "dashed", size = 0.5) + facet_wrap(~ Principal_Component, scales = "free_y") + labs(x = "Loading", y = "", color = "Principal Component") + theme_minimal() + theme(legend.position = "none")
+
+print(loadings_plot)
+```

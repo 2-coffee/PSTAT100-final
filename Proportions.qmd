@@ -842,6 +842,7 @@ main_pop2 <- main_pop1 |> select(-ethnicity) |>
   across(matches("hc_[a-z]"), ~ .x/total_pop)
   )
 ```
+
 ```{r}
 # Census By region
 main_popRegion <- main_pop1 |> select(-ethnicity) |>
