@@ -6,7 +6,7 @@ execute:
   echo: false
 ---
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
 library(stargazer)
 library(ggplot2)
 library(dplyr)
@@ -15,6 +15,7 @@ library(forcats)
 library(qtl2)
 library(janitor)
 library(corrplot)
+library(tidyverse)
 
 #fertility data
 fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv")
@@ -114,7 +115,7 @@ fertility_mortality <- fertility_merged2 |>
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 births_deaths <- fertility_mortality %>% 
-  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:repro_pop, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth, pop_age1524:pop_age3544 ) %>% 
+  select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:repro_pop, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth, pop_age1524:pop_age3544 ) |>
   mutate(norm_total_births = round(norm_total_births, 0),
          region = case_when(
            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
@@ -195,6 +196,29 @@ TFR_GAP1 <- TFR_GAP |> ungroup() |> # for merging with Census data
   filter(year!=2020)
 ```
 
+```{r}
+# TFR by state and year
+pop_year <- fertility_mortality |> select(year,state,matches("pop_age[0-9]")) |> filter(year!=2020) |>
+  unique() |>
+  group_by(state,year)
+
+total_fertilityUS <- fertility_mortality |> select(year,state,matches("births_age[0-9]")) |> 
+  filter(year!=2020) |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |>
+  left_join(pop_year) |>
+  mutate(fert_age1524 = births_age1524/pop_age1524 * 1000,
+         fert_age2534 = births_age2534/pop_age2534 * 1000,
+         fert_age3544 = births_age3544/pop_age3544 * 1000) |>
+  select(year,starts_with("fert_age")) |>
+  mutate(total_fer = (fert_age1524+fert_age2534+fert_age3544)*10) 
+
+TFR_USstyr <- total_fertilityUS |> select(state,year,total_fer) |>
+  mutate(total_fer = total_fer/1000) |>
+  ungroup()
+```
+
+
 # Background
 
 The Infant Mortality and Fertility Rates Dataset provides data on infant mortality rates (measured as the number of infant deaths per 1,000 live births) and fertility rates (measured as the number of births per 1,000 women per year) across U.S. states. The Infant Mortality Dataset covers the years 2003 to 2023, while the Fertility Rates Dataset spans 2016 to 2023.
@@ -212,6 +236,7 @@ The Population Demographics dataset provides data on the years 2016 to 2023, inc
 The datasets come from the Centers for Disease Control and Prevention (CDC), collected from anywhere a person receives healthcare. This may lead to limitations as it is up to the city, county, and state to decide what information is collected, and how and when it can be shared by the CDC (“Where Does Our Data Come From.”).
 
 median income -\> 2020 reasoning <https://www.census.gov/data/developers/data-sets/acs-1year.2020.html#list-tab-843855098>
+
 
 ### Population Demographics
 
@@ -248,7 +273,7 @@ pop_pre2020 <- rbind(pop_2016m2,pop_2017m2,pop_2018m2,pop_2019m2)
 pop_post2020 <- rbind(pop_2021m2,pop_2022m2,pop_2023m2)
 main_pop <- rbind(pop_pre2020,pop_post2020)
 
-main_pop1 <- main_pop |>
+main_pop1 <- main_pop |> # convert to raw numbers
   mutate(
     across(matches("total_[a-z]+_pop"), ~ .x/100*total_pop),
     across(matches("pop_age[0-9]"), ~ .x/100*total_pop),
@@ -257,7 +282,7 @@ main_pop1 <- main_pop |>
     SNAP = SNAP/100,
     across(matches("hc_[a-z]"), ~ .x/100*health_cov_pop)
   )
-main_pop2 <- main_pop1 |> select(-ethnicity) |>
+main_pop2 <- main_pop1 |> select(-ethnicity) |> # convert variables to be proportional to total_pop
   group_by(state,year) |>
   summarize(across(everything(), sum)) |> ungroup() |>
   mutate(
@@ -271,14 +296,64 @@ main_pop3 <- main_pop2 |>
   select(-c(total_pop,marital_status_pop,edu_attain_pop,income_households,health_cov_pop)) 
 
 main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> # Join CDC data with Census
-  left_join(TFR_GAP1, by = c("state", "year")) |>
-  left_join(infantMort_eth1, by = c("state", "year"))
+  left_join(TFR_USstyr, by = c("state", "year")) |>
+  left_join(infantMort1, by = c("state", "year"))
 
 ```
 
 # Question of Interest
 
+
 # Exploratory Data Analysis (EDA)
+
+
+## Initial Exploration of CDC Data
+
+```{r}
+inf_fer_rates  <- births_deaths |> select(state, year, bacode, infantMort_deaths_nhblack:region, -infantMort_deaths_con,-infantMort_deaths_noncon,
+                        -infantMort_deaths_neo,-infantMort_deaths_total) 
+
+inf_fer_rates1 <- inf_fer_rates |> select(state:infantMort_deaths_otherraceeth,region) |>
+  pivot_longer(
+    cols = starts_with("infantMort_"),
+    names_to = "ethnicity",
+    values_to = "InfantMortality"
+  ) |>
+  mutate(ethnicity = recode(ethnicity,
+                            "infantMort_deaths_hisp" = "Hispanic",
+                            "infantMort_deaths_nhblack" = "Non-Hispanic Black",
+                            "infantMort_deaths_nhwhite" = "Non-Hispanic White",
+                            "infantMort_deaths_otherraceeth" = "Other Race"))
+
+
+inf_fer_rates2 <- inf_fer_rates  |> select(c(state:bacode, fer_rate_nhblack:region)) |>
+  pivot_longer(
+    cols= starts_with("fer_rate"),
+    names_to = "ethnicity",
+    values_to = "FertilityRate"
+  ) |> 
+  mutate(ethnicity = recode(ethnicity,
+                            "fer_rate_hisp" = "Hispanic",
+                            "fer_rate_nhblack" = "Non-Hispanic Black",
+                            "fer_rate_nhwhite" = "Non-Hispanic White",
+                            "fer_rate_otherraceeth" = "Other Race"))
+
+inf_fer_rates_main <- inf_fer_rates1 |> 
+  left_join(inf_fer_rates2, by=join_by(state,year,ethnicity,region,bacode))
+
+inf_fer_rates_main |> ggplot(aes(y=InfantMortality, x=FertilityRate, col=ethnicity)) +
+  geom_point() +
+  facet_wrap(vars(region))
+
+```
+
+When analyzing birth rates, it's important to account for the relationship between fertility rates and infant mortality. Since higher fertility rates often correlate with higher raw infant mortality, we normalize the data by calculating both the fertility rate and the infant mortality rate. To improve visibility, we grouped states by region, because coloring by state was unclear.  
+Across all five regions, the "Other race" category consistently shows both lower fertility and lower infant mortality rates. For Non-Hispanic White populations, fertility rates exhibit little variation, whereas their infant mortality rates show the highest variation among the four ethnic groups.  
+For Non-Hispanic Black populations, the relationship between fertility rate and infant mortality generally cluster towards lower fertility rate and lower infant mortality. However, there is a noticeable increase in the variation of infant mortality in the Southeast, similar to Non-Hispanic White populations.  
+Finally, among Hispanic populations, there is a trend of higher fertility rates, especially in the Midwest, Northeast, and Southeast regions. Interestingly, Hispanic groups also tend to have lower infant mortality rates compared to other ethnicities in all regions except for Southwest.  
+Coloring and filtering by year did not yield a noticable difference in the structure of each ethinicity.   
+  
+
 
 ## Correlation Matrix
 
@@ -308,29 +383,9 @@ In this part, we'll use linear regression to see which predictors are significan
 <!-- $$ -->
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-pop_year <- fertility_mortality |> select(year,state,matches("pop_age[0-9]")) |> filter(year!=2020) |>
-  unique() |>
-  group_by(state,year)
-
-total_fertilityUS <- fertility_mortality |> select(year,state,matches("births_age[0-9]")) |> 
-  filter(year!=2020) |>
-  group_by(state,year) |>
-  summarize(across(everything(), sum)) |>
-  left_join(pop_year) |>
-  mutate(fert_age1524 = births_age1524/pop_age1524 * 1000,
-         fert_age2534 = births_age2534/pop_age2534 * 1000,
-         fert_age3544 = births_age3544/pop_age3544 * 1000) |>
-  select(year,starts_with("fert_age")) |>
-  mutate(total_fer = (fert_age1524+fert_age2534+fert_age3544)*10) 
-
-TFR_USstyr <- total_fertilityUS |> select(state,year,total_fer) |>
-  mutate(total_fer = total_fer/1000) |>
-  ungroup()
 
 lr_state <- main_pop4 |>
-  select(-c(starts_with("ms_"), "TFR_gap", "InfantMort_GAP", starts_with("pop_age"))) |>
-  left_join(TFR_USstyr) |>
-  left_join(infantMort1)
+  select(-c(starts_with("ms_"), total_fer, total_mort ,starts_with("pop_age")))
 
 lr_state16 <- lr_state |>
   filter(year == 2016) 
@@ -375,7 +430,7 @@ lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_
 #           column.labels = c("2021", "2022", "2023"))
 ```
 
-# Principal Component Analysis
+# Principal Component Analysis (PCA)
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 no_state <- main_pop4 |>
