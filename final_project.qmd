@@ -4,6 +4,7 @@ author: "Leslie Cervantes Rivera & Kevin Le"
 format: pdf
 execute:
   echo: false
+html-math-method: mathjax
 ---
 
 ```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
@@ -230,12 +231,11 @@ Infant mortality refers to the death of a baby that occurs before their first bi
 
 Fertility rate represents the total number of children a woman has during her reproductive years (“Fertility Rate.”). It plays a crucial role in population growth and demographical planning, influencing services such as education, healthcare, and workforce development. From 2007 to 2022, the fertility rate has dropped by about 19%, influenced by the health of the economy, social, health, and historical events (Hickerson). These changes have long-term implications, as it leads to an aging population, smaller workforce, and economic strain on government budgets.
 
-The Population Demographics dataset provides data on the years 2016 to 2023, providing information on total population, as well as the distribution of sex and age, marital status, educational attainment, SNAP participation, household median income, and health insurance coverage by ethnicity. These variables represent key social, economic, and healthcare conditions across U.S. states.  
-  
-Ryabov (2015) found that the relationship between Total Fertility Rate (TFR) and various human development indicators "a negative association between selected human development indicators and TFR exists in suburban and rural counties, as well as in the United States as a whole." However, the analysis was inconclusive for urban counties; some indicators such as median income were positively associated with TFR, whereas higher educational attainment negatively associated with TFR.  
-  
-In 2019, Hamilton et al. reported a TFR of 1,705 expected births per 1,000 women for all women aged 15–49 in the U.S. The TFR decreased as the level of education increased, starting from women with a 12th-grade education or less through those with an associate’s or bachelor’s degree. However, the TFR began to rise again among women with a bachelor’s degree and continued to increase for those holding a doctorate or professional degree.
+The Population Demographics dataset provides data on the years 2016 to 2023, providing information on total population, as well as the distribution of sex and age, marital status, educational attainment, SNAP participation, household median income, and health insurance coverage by ethnicity. These variables represent key social, economic, and healthcare conditions across U.S. states.
 
+Ryabov (2015) found that the relationship between Total Fertility Rate (TFR) and various human development indicators "a negative association between selected human development indicators and TFR exists in suburban and rural counties, as well as in the United States as a whole." However, the analysis was inconclusive for urban counties; some indicators such as median income were positively associated with TFR, whereas higher educational attainment negatively associated with TFR.
+
+In 2019, Hamilton et al. reported a TFR of 1,705 expected births per 1,000 women for all women aged 15–49 in the U.S. The TFR decreased as the level of education increased, starting from women with a 12th-grade education or less through those with an associate’s or bachelor’s degree. However, the TFR began to rise again among women with a bachelor’s degree and continued to increase for those holding a doctorate or professional degree.
 
 # Data Sources
 
@@ -246,7 +246,6 @@ The datasets come from the Centers for Disease Control and Prevention (CDC), col
 ## Population Demographics
 
 The dataset is sourced from the United States Census Bureau under the American Community Survey (ACS) category, specifically the *Selected Population Profile in the United States*. The Census Bureau collects data directly from respondents through censuses and surveys, with primary sources also including administrative data.
-
 
 It should be noted that data for 2020 is not included due to disruptions caused by the COVID-19 pandemic. To protect the safety of their employees and respondents, the Census Bureau suspended ACS data collection operations, including mail surveys, in-person followups with non-respondents, and data collection from group quarters such as nursing homes, college dorms, and prisons.
 
@@ -376,7 +375,7 @@ main_pop4 |>
 
 -   `total_mort` and `no_hc`: There is a weak positive correlation, indicating states with a higher portion of individuals with no health coverage tend to have a higher total mortality rate.
 
--   `total_mort` and `edu_bach` and `edu_grad`: There are moderate negative correlations between total infantmortality rates and higher education. This indicates states with a higher proportion of individuals with higher education have lower total infant mortality rates.
+-   `total_mort` and `edu_bach` and `edu_grad`: There are moderate negative correlations between total infant mortality rates and higher education. This indicates states with a higher proportion of individuals with higher education have lower total infant mortality rates.
 
 -   
 
@@ -384,19 +383,19 @@ main_pop4 |>
 
 In this part, we'll use linear regression to see which predictors are significant for each year. We are going to regress total fertility on education attainment, economic indicators, health coverage, and infant mortality.
 
-<!-- $$ -->
+$$
 
-<!-- \text{total_fer} -->
+\text{total_fer}
 
-<!--     = \beta_0 + \underbrace{\beta_1\left(\text{less hs}\right)_i + \cdots + \beta_5\left(\text{grad}\right)_i}_{\text{education attainment}}  -->
+= \beta_0 + \underbrace{\beta_1\text{less hs}_i + \cdots + \beta_5\text{grad}_i}_{\text{education attainment}}
 
-<!--     + \underbrace{\beta_6\text{income_median}_i + \beta_7\text{SNAP}_i}_{\text{economic indicators}} -->
+ + \underbrace{\beta_6\text{income_median}_i + \beta_7text{SNAP}_i}_{\text{economic indicators}} 
 
-<!--     + \underbrace{\beta_8\text{private}_i + \cdots + \beta_{10}\text{no coverage}_i}_{\text{health coverage}} -->
+ + \underbrace{\beta_8\text{private}_i + cdots + \beta_{10}\text{no coverage}_i}_{\text{health coverage}} 
 
-<!--     + \underbrace{\beta_{11}\text{total_mort}_i}_{\text{infant mortality}} + \epsilon_i -->
+ + \underbrace{\beta_{11}\text{total_mort}_i}_{\text{infant mortality}} + \epsilon_i 
 
-<!-- $$ -->
+$$
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -437,6 +436,28 @@ lin_reg21 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_
 lin_reg22 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
 
 lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
+
+print("2016")
+lin_reg16_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
+summary(lin_reg16_mor)
+print("2017")
+lin_reg17_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
+summary(lin_reg17_mor)
+print("2018")
+lin_reg18_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
+summary(lin_reg18_mor)
+print("2019")
+lin_reg19_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
+summary(lin_reg19_mor)
+print("2021")
+lin_reg21_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
+summary(lin_reg21_mor)
+print("2022")
+lin_reg22_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
+summary(lin_reg22_mor)
+print("2023")
+lin_reg23_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
+summary(lin_reg23_mor)
 ```
 
 ```{r}
@@ -512,26 +533,25 @@ Positive PC1 represents states with lower infant mortality due to higher educati
 
 The variables that are most influential for PC2 are `edu_somecoll`, `income_median`, `SNAP`, `total_fer`, and `edu_grad`. States with higher rates of residents who only attained some college education has higher TFR, on the other hand, states with higher total graduates, higher income median, and SNAP rate signaled lower TFR.
 
-
 [Name for PC3:]{.underline} *"Public/None Healthcare Coverage and High School Educated Population"*
 
 The variables that are most influential for PC3 are `hc_public`, `edu_hs`, `income_median`, and `hc_nohc`. Higher PC3 scores are associated with states that have greater public healthcare coverage and a larger proportion of the population with only a high school diploma. Conversely, negative PC3 scores are linked to states with higher median incomes and a greater percentage of people without health insurance coverage.
 
 [Name for PC4:]{.underline} *"Private/None Healthcare Coverage and SNAP"*
 
-The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_private`, `edu_hs`, and `total_mort`. High PC4 scores explain states who has higher SNAP rates, private healthcare coverage, and proportion of only high school diploma has higher infant mortality. 
+The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_private`, `edu_hs`, and `total_mort`. High PC4 scores explain states who has higher SNAP rates, private healthcare coverage, and proportion of only high school diploma has higher infant mortality.
 
 [Name for PC5:]{.underline} *"Education Attain and Fertility Rate"*
 
-The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. PC5 indicates that states with higher proportion of residents who only attained some college education explains lower TFR. 
+The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. PC5 indicates that states with higher proportion of residents who only attained some college education explains lower TFR.
 
 # Sources
 
 “Fertility Rate.” *Encyclopædia Britannica*, Encyclopædia Britannica, Inc., www.britannica.com/topic/fertility-rate. (2025).
 
-Hickerson, Ali. “The US Fertility Rate Is Decreasing: What It Means for the Nation’s Future \| News \| Citynewsokc.Com.” *United States Fertility Rate Is Dropping*,  www.citynewsokc.com/news/the-us-fertility-rate-is-decreasing-what-it-means-for-the-nations-future/collection_81b09a28-e02f-59b9-b52a-08b15c647dcf.html. (2024).
+Hickerson, Ali. “The US Fertility Rate Is Decreasing: What It Means for the Nation’s Future \| News \| Citynewsokc.Com.” *United States Fertility Rate Is Dropping*, www.citynewsokc.com/news/the-us-fertility-rate-is-decreasing-what-it-means-for-the-nations-future/collection_81b09a28-e02f-59b9-b52a-08b15c647dcf.html. (2024).
 
-Marino, Kate. “Infant Mortality Rates Declining, but Sudden Unexpected Infant Death Is on the Rise.” *Infant Mortality Rates Declining, but Sudden Unexpected Infant Death Is on the Rise \| VCU Health*,  www.vcuhealth.org/news/infant-mortality-rates-declining-but-sudden-unexpected-infant-death-is-on-the-rise/#:\~:text=Wolf%20attributes%20declining%20overall%20infant,media%20on%20infant%20sleep%20practices.) (https://www.nichd.nih.gov/health/topics/infant-mortality/topicinf.)  (2025).
+Marino, Kate. “Infant Mortality Rates Declining, but Sudden Unexpected Infant Death Is on the Rise.” *Infant Mortality Rates Declining, but Sudden Unexpected Infant Death Is on the Rise \| VCU Health*, www.vcuhealth.org/news/infant-mortality-rates-declining-but-sudden-unexpected-infant-death-is-on-the-rise/#:\~:text=Wolf%20attributes%20declining%20overall%20infant,media%20on%20infant%20sleep%20practices.) (https://www.nichd.nih.gov/health/topics/infant-mortality/topicinf.) (2025).
 
 “Where Does Our Data Come From.” *Centers for Disease Control and Prevention*, archive.cdc.gov/www_cdc_gov/surveillance/data-modernization/basics/where_does_our_data_come_from.html. (2023).
 
