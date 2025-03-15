@@ -15,6 +15,7 @@ library(forcats)
 library(qtl2)
 library(janitor)
 library(corrplot)
+library(magrittr)
 library(tidyverse)
 
 #fertility data
@@ -196,7 +197,7 @@ TFR_GAP1 <- TFR_GAP |> ungroup() |> # for merging with Census data
   filter(year!=2020)
 ```
 
-```{r}
+```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
 # TFR by state and year
 pop_year <- fertility_mortality |> select(year,state,matches("pop_age[0-9]")) |> filter(year!=2020) |>
   unique() |>
@@ -216,8 +217,8 @@ total_fertilityUS <- fertility_mortality |> select(year,state,matches("births_ag
 TFR_USstyr <- total_fertilityUS |> select(state,year,total_fer) |>
   mutate(total_fer = total_fer/1000) |>
   ungroup()
-```
 
+```
 
 # Background
 
@@ -229,18 +230,19 @@ Fertility rate represents the total number of children a woman has during her re
 
 The Population Demographics dataset provides data on the years 2016 to 2023, providing information on total population, as well as the distribution of sex and age, marital status, educational attainment, SNAP participation, household median income, and health insurance coverage by ethnicity. These variables represent key social, economic, and healthcare conditions across U.S. states.
 
-## Data Sources
+# Data Sources
 
-### Birth Rates and Infant Mortality Datasets
+## Birth Rates and Infant Mortality Datasets
 
 The datasets come from the Centers for Disease Control and Prevention (CDC), collected from anywhere a person receives healthcare. This may lead to limitations as it is up to the city, county, and state to decide what information is collected, and how and when it can be shared by the CDC (“Where Does Our Data Come From.”).
 
-median income -\> 2020 reasoning <https://www.census.gov/data/developers/data-sets/acs-1year.2020.html#list-tab-843855098>
+## Population Demographics
 
+The dataset is sourced from the United States Census Bureau under the American Community Survey (ACS) category, specifically the *Selected Population Profile in the United States*. The Census Bureau collects data directly from respondents through censuses and surveys, with primary sources also including administrative data.
 
-### Population Demographics
+It should be noted that data for 2020 is not included due to disruptions caused by the COVID-19 pandemic. To protect the safety of their employees and respondents, the Census Bureau suspended ACS data collection operations, including mail surveys, in-person followups with non-respondents, and data collection from group quarters such as nursing homes, college dorms, and prisons.
 
-The dataset is sourced from the United States Census Bureau under the American Community Survey category, specifically the *Selected Population Profile in the United States*. The Census Bureau collects data directly from respondents through censuses and surveys, with primary sources also including administrative data.
+# Question of Interest
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
@@ -301,15 +303,11 @@ main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> # Join CDC
 
 ```
 
-# Question of Interest
-
-
 # Exploratory Data Analysis (EDA)
-
 
 ## Initial Exploration of CDC Data
 
-```{r}
+```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
 inf_fer_rates  <- births_deaths |> select(state, year, bacode, infantMort_deaths_nhblack:region, -infantMort_deaths_con,-infantMort_deaths_noncon,
                         -infantMort_deaths_neo,-infantMort_deaths_total) 
 
@@ -347,22 +345,32 @@ inf_fer_rates_main |> ggplot(aes(y=InfantMortality, x=FertilityRate, col=ethnici
 
 ```
 
-When analyzing birth rates, it's important to account for the relationship between fertility rates and infant mortality. Since higher fertility rates often correlate with higher raw infant mortality, we normalize the data by calculating both the fertility rate and the infant mortality rate. To improve visibility, we grouped states by region, because coloring by state was unclear.  
-Across all five regions, the "Other race" category consistently shows both lower fertility and lower infant mortality rates. For Non-Hispanic White populations, fertility rates exhibit little variation, whereas their infant mortality rates show the highest variation among the four ethnic groups.  
-For Non-Hispanic Black populations, the relationship between fertility rate and infant mortality generally cluster towards lower fertility rate and lower infant mortality. However, there is a noticeable increase in the variation of infant mortality in the Southeast, similar to Non-Hispanic White populations.  
-Finally, among Hispanic populations, there is a trend of higher fertility rates, especially in the Midwest, Northeast, and Southeast regions. Interestingly, Hispanic groups also tend to have lower infant mortality rates compared to other ethnicities in all regions except for Southwest.  
-Coloring and filtering by year did not yield a noticable difference in the structure of each ethinicity.   
-  
+When analyzing birth rates, it's important to account for the relationship between fertility rates and infant mortality. Since higher fertility rates often correlate with higher raw infant mortality, we normalize the data by calculating both the fertility rate and the infant mortality rate. To improve visibility, we grouped states by region, because coloring by state was unclear.
 
+Across all five regions, the "Other race" category consistently shows both lower fertility and lower infant mortality rates. For Non-Hispanic White populations, fertility rates exhibit little variation, whereas their infant mortality rates show the highest variation among the four ethnic groups.
+
+For Non-Hispanic Black populations, the relationship between fertility rate and infant mortality generally cluster towards lower fertility rate and lower infant mortality. However, there is a noticeable increase in the variation of infant mortality in the Southeast, similar to Non-Hispanic White populations.
+
+Finally, among Hispanic populations, there is a trend of higher fertility rates, especially in the Midwest, Northeast, and Southeast regions. Interestingly, Hispanic groups also tend to have lower infant mortality rates compared to other ethnicities in all regions except for Southwest.
+
+Coloring and filtering by year did not yield a noticeable difference in the structure of each ethnicity.
 
 ## Correlation Matrix
 
-```{r}
+```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
 main_pop4 |>
   select(-c("state", "year")) |>
   cor(use = "complete.obs") |>
   corrplot()
 ```
+
+-   `total_mort` and `SNAP`: A weak positive correlation indicates states with a higher portion of SNAP consumers tend to have a higher total mortality rate.
+
+-   `total_mort` and `no_hc`: There is a weak positive correlation, indicating states with a higher portion of individuals with no health coverage tend to have a higher total mortality rate.
+
+-   `total_mort` and `edu_bach` and `edu_grad`: There are moderate negative correlations between total infantmortality rates and higher education. This indicates states with a higher proportion of individuals with higher education have lower total infant mortality rates.
+
+-   
 
 # Linear Regression
 
@@ -385,7 +393,7 @@ In this part, we'll use linear regression to see which predictors are significan
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
 lr_state <- main_pop4 |>
-  select(-c(starts_with("ms_"), total_fer, total_mort ,starts_with("pop_age")))
+  select(-c(starts_with("ms_"),starts_with("pop_age")))
 
 lr_state16 <- lr_state |>
   filter(year == 2016) 
