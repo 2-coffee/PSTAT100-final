@@ -40,12 +40,6 @@ fertility_merged <- bind_rows(fertility_update, fertility_update2)
 
 fertility_merged <- fertility_merged %>% 
   filter(!year == 2024)
-
-infant_mortality_biannual_data |>
-  summarize(across(c(births_nhblack:births_otherraceeth, 
-                     deaths_nhblack, deaths_nhwhite, deaths_hisp, 
-                     deaths_noncon, deaths_neo, deaths_total), 
-                   ~ mean(is.na(.))))
 ```
 
 ```{r}
@@ -306,6 +300,31 @@ EthRegion_TFR1 <- EthRegion_TFR |> filter(year!=2020)
 ```
 
 ```{r}
+popEth_state <- fertility_mortality |> select(state,year,pop_nhblack,pop_nhwhite,pop_hisp,pop_otherraceeth) |> unique() |>
+  group_by(state,year) |>
+  mutate(pop_minority = pop_nhblack + pop_hisp + pop_otherraceeth)
+
+TFR_GAP <- fertility_mortality |> 
+  select(state,year,norm_births_nhblack,norm_births_nhwhite,
+         norm_births_hisp,norm_births_otherraceeth) |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |>
+  left_join(popEth_state) |> # Minority Fertility as eth_birth/pop_minority
+  mutate(Minority_fer = (norm_births_nhblack/pop_minority + norm_births_hisp/pop_minority + norm_births_otherraceeth/pop_minority) * 30*1000, # multiply by 30 to correct for age gap
+         Nonminority_fer = norm_births_nhwhite/pop_nhwhite * 1000*30,
+  TFR_gap = (Minority_fer - Nonminority_fer)/1000
+         ) |>
+  select(year,Minority_fer,Nonminority_fer,TFR_gap) |> ungroup()
+
+print(TFR_GAP)
+
+TFR_GAP1 <- TFR_GAP |> ungroup() |> # for merging with Census data
+  select(state,year,TFR_gap) |>
+  filter(year!=2020)
+```
+
+
+```{r}
 #read pop files
 pop_2016 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2016.csv")
 pop_2017 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2017.csv")
@@ -364,6 +383,16 @@ main_pop1 <- main_pop |>
     across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/100*edu_attain_pop),
     SNAP = SNAP/100,
     across(matches("hc_[a-z]"), ~ .x/100*health_cov_pop)
+  )
+main_pop2 <- main_pop1 |> select(-ethnicity) |>
+  group_by(state,year) |>
+  summarize(across(everything(), sum)) |> ungroup() |>
+  mutate(
+  across(matches("total_[a-z]+_pop"), ~ .x/total_pop),
+  across(matches("pop_age[0-9]"), ~ .x/total_pop),
+  across(matches("ms_[a-z]"), ~ .x/total_pop),
+  across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/total_pop),
+  across(matches("hc_[a-z]"), ~ .x/total_pop)
   )
 
 main_popRegion <- main_pop1 |> select(-ethnicity) |>
@@ -454,6 +483,12 @@ summary(lin_reg22)
 
 lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
 summary(lin_reg23)
+
+library(stargazer)
+stargazer(lin_reg16, lin_reg17, lin_reg18, lin_reg19, type = "text",
+          column.labels = c("2016", "2017", "2018", "2019"))
+stargazer(lin_reg21, lin_reg22, lin_reg23, type = "text",
+          column.labels = c("2021", "2022", "2023"))
 ```
 
 ```{r}
@@ -491,6 +526,7 @@ var_explained_plot <- ggplot(pca_var_explained, aes(x = Component)) +
   labs(x = "Component", y = "Variance Explained", color = "Legend") +
   theme_minimal()
 print(var_explained_plot)
+
 num_pc <- 5
 loading_df <- pca$rotation[, 1:num_pc]
 loading_plot_df <- loading_df %>% 
