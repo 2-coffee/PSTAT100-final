@@ -524,6 +524,46 @@ The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_priva
 [Name for PC5:]{.underline} *"Education Attain and Fertility Rate"*
 
 The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. PC5 indicates that states with higher proportion of residents who only attained some college education explains lower TFR. 
+  
+Overall, it seems that educational attainment explained a lot of TFR and infant mortality.   
+
+```{r, message=FALSE}
+# create two tables where edu_somcoll is grouped with _hs, _less_hs and another table with _bach and _grad grouped.
+# check states with higher educational attainment and their region, see how well it correlates with the regions in our initial EDA.
+edu_gap <- main_pop4 |> select(state,year,starts_with("edu_")) |>
+  mutate(edu_noDegree = edu_less_hs + edu_hs + edu_somecoll,
+         edu_Degree = edu_bach + edu_grad,
+         edu_gap = edu_Degree - edu_noDegree) |>
+  select(state,year,edu_gap)
+
+main_popEDU <- main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |>
+  left_join(edu_gap) |> select(-year) |>
+  group_by(state) |>
+  arrange(desc(abs(edu_gap))) |> slice(1) |> # get years for states with biggest gaps
+  ungroup() |>
+  mutate(region = case_when(
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing"
+         )) |>
+  select(region,total_fer,total_mort,edu_gap,everything()) |>
+  arrange(edu_gap,region)
+head(main_popEDU)
+tail(main_popEDU,7)
+```
+
+The education gap is calculated by adding the proportions of less than highschool, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. 
+I think we should take the average? And talk about how D.C is an outlier.
+  
+As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total fertility rates per woman and higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total fertility rates and lower average total mortality rates.
+
+
+
+# Conclusion
+
 
 # Sources
 
