@@ -199,11 +199,11 @@ TFR_GAP1 <- TFR_GAP |> ungroup() |> # for merging with Census data
 
 The Infant Mortality and Fertility Rates Dataset provides data on infant mortality rates (measured as the number of infant deaths per 1,000 live births) and fertility rates (measured as the number of births per 1,000 women per year) across U.S. states. The Infant Mortality Dataset covers the years 2003 to 2023, while the Fertility Rates Dataset spans 2016 to 2023.
 
-Infant mortality refers to the death of baby that occurs before their first birthday. It is a key indicator of a population's overall health, reflecting the social, economic, and healthcare conditions within a state. High infant mortality rates could indicate insufficient healthcare access or inequalities in medical services, particularly in low-income and rural areas. Over the years, improvements in screening and treatment for illnesses, better obstetric management, and neonatal care have contributed in the declining of infant mortality rates, but disparities still exist within state and demographic groups.
+Infant mortality refers to the death of a baby that occurs before their first birthday. It is a key indicator of a population's overall health, reflecting the social, economic, and healthcare conditions within a state. High infant mortality rates could indicate insufficient healthcare access or inequalities in medical services, particularly in low-income and rural areas. Over the years, improvements in screening and treatment for illnesses, better obstetric management, and neonatal care have contributed in the declining of infant mortality rates, but disparities still exist within state and demographic groups (Marino).
 
 Fertility rate represents the total number of children a woman has during her reproductive years (“Fertility Rate.”). It plays a crucial role in population growth and demographical planning, influencing services such as education, healthcare, and workforce development. From 2007 to 2022, the fertility rate has dropped by about 19%, influenced by the health of the economy, social, health, and historical events (Hickerson). These changes have long-term implications, as it leads to an aging population, smaller workforce, and economic strain on government budgets.
 
-The Population Demographics dataset provides data on the years 2016 to 2023, including total population of sex and age, marital status, educational attainment, SNAP, and health insurance coverage based on ethnicity.
+The Population Demographics dataset provides data on the years 2016 to 2023, providing information on total population, as well as the distribution of sex and age, marital status, educational attainment, SNAP participation, household median income, and health insurance coverage by ethnicity. These variables represent key social, economic, and healthcare conditions across U.S. states.
 
 ## Data Sources
 
@@ -215,7 +215,7 @@ median income -\> 2020 reasoning <https://www.census.gov/data/developers/data-se
 
 ### Population Demographics
 
-The dataset comes from the United States Census Bureau under the category American Community Survey named Selected Population Profile in the United States. The Census Bureau collects their data from respondents directly through censuses and surveys. Primary sources come from administrative data.
+The dataset is sourced from the United States Census Bureau under the American Community Survey category, specifically the *Selected Population Profile in the United States*. The Census Bureau collects data directly from respondents through censuses and surveys, with primary sources also including administrative data.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
