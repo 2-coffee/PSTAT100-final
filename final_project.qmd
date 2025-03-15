@@ -16,11 +16,13 @@ library(qtl2)
 library(janitor)
 library(corrplot)
 library(tidyverse)
+#library(magrittr)
 
-#fertility data
-fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv")
-#infant mortality
-infant_mortality_biannual_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/infant_mortality_biannual_data.csv")
+
+fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv") #fertility data
+
+infant_mortality_biannual_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/infant_mortality_biannual_data.csv") #infant mortality
+
 #Census
 median_income <- read.csv('~/Desktop/median_income_2016_2023.csv')
 pop_2016 <- read.csv("~/Desktop/pop_profiles/pop_profile_2016.csv")
@@ -227,15 +229,18 @@ Infant mortality refers to the death of a baby that occurs before their first bi
 
 Fertility rate represents the total number of children a woman has during her reproductive years (“Fertility Rate.”). It plays a crucial role in population growth and demographical planning, influencing services such as education, healthcare, and workforce development. From 2007 to 2022, the fertility rate has dropped by about 19%, influenced by the health of the economy, social, health, and historical events (Hickerson). These changes have long-term implications, as it leads to an aging population, smaller workforce, and economic strain on government budgets.
 
-The Population Demographics dataset provides data on the years 2016 to 2023, providing information on total population, as well as the distribution of sex and age, marital status, educational attainment, SNAP participation, household median income, and health insurance coverage by ethnicity. These variables represent key social, economic, and healthcare conditions across U.S. states.
+The Population Demographics dataset provides data on the years 2016 to 2023, providing information on total population, as well as the distribution of sex and age, marital status, educational attainment, SNAP participation, household median income, and health insurance coverage by ethnicity. These variables represent key social, economic, and healthcare conditions across U.S. states.  
+  
+Ryabov (2015) found that the relationship between Total Fertility Rate (TFR) and various human development indicators "a negative association between selected human development indicators and TFR exists in suburban and rural counties, as well as in the United States as a whole." However, the analysis was inconclusive for urban counties; some indicators such as median income were positively associated with TFR, whereas higher educational attainment negatively associated with TFR.  
+  
+In 2019, Hamilton et al. reported a TFR of 1,705 expected births per 1,000 women for all women aged 15–49 in the U.S. The TFR decreased as the level of education increased, starting from women with a 12th-grade education or less through those with an associate’s or bachelor’s degree. However, the TFR began to rise again among women with a bachelor’s degree and continued to increase for those holding a doctorate or professional degree.
+
 
 ## Data Sources
 
 ### Birth Rates and Infant Mortality Datasets
 
 The datasets come from the Centers for Disease Control and Prevention (CDC), collected from anywhere a person receives healthcare. This may lead to limitations as it is up to the city, county, and state to decide what information is collected, and how and when it can be shared by the CDC (“Where Does Our Data Come From.”).
-
-median income -\> 2020 reasoning <https://www.census.gov/data/developers/data-sets/acs-1year.2020.html#list-tab-843855098>
 
 
 ### Population Demographics
@@ -385,7 +390,7 @@ In this part, we'll use linear regression to see which predictors are significan
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
 lr_state <- main_pop4 |>
-  select(-c(starts_with("ms_"), total_fer, total_mort ,starts_with("pop_age")))
+  select(-c(starts_with("ms_"),starts_with("pop_age")))
 
 lr_state16 <- lr_state |>
   filter(year == 2016) 
@@ -486,34 +491,39 @@ geom_line(aes(group = Variable)) + geom_point() + geom_vline(aes(xintercept = ze
 print(loadings_plot)
 ```
 
-[Name for PC1:]{.underline} *"Health Outcomes"*
+[Name for PC1:]{.underline} *"Education Attainment and Infant Mortality"*
 
-*The variables that are most influential are `hc_private`*, `hc_public`, and `hc_nohc`, `edu_bach`, and `edu_less_hs`. Private health coverage suggests individuals have better access to quality healthcare and Bachelor's degree suggests better access to resources, jobs, or healthcare due to their higher education level. However, public health coverage and no coverage suggest limited to no healthcare services. Less than high school education is typically viewed as lower income and fewer job opportunities.
+*The variables that are most influential are* `edu_bach`, `edu_grad`, `ed_less_hs`, `total_mort`, and `hc_private`. States with higher levels of educational attainment tend to have lower total infant mortality rates, while states with larger populations of individuals with only a high school diploma or less show a correlation with higher total infant mortality. Additionally, private healthcare is negatively correlated with infant mortality and positively associated with higher levels of education.
 
-Positive PC1 represents individuals with better health outcomes due to higher education and better health coverage, while negative PC1 represents those with worse health outcomes due to lower education and limited to no health coverage.
+Positive PC1 represents states with lower infant mortality due to higher education and better health coverage, while negative PC1 represents those with higher infant mortality due to lower education and limited to no health coverage.
 
-[Name for PC2:]{.underline} *"?"*
+[Name for PC2:]{.underline} *"Education and Income"*
 
-The variables that are most influential for PC2 are `edu_somecoll` and `income_median`. Positive PC2 represents individuals who may have an associates or some time college, which may provide more job opportunities and higher wages than those with lower degrees. Negative PC2 represents median income, which suggests individuals with lower income have less access to resources.
+The variables that are most influential for PC2 are `edu_somecoll`, `income_median`, `SNAP`, `total_fer`, and `edu_grad`. States with higher rates of residents who only attained some college education has higher TFR, on the other hand, states with higher total graduates, higher income median, and SNAP rate signaled lower TFR.
 
-[Name for PC3:]{.underline} *"Health Coverage"*
 
-The variables that are most influential for PC3 are `hc_nohc` and `hc_public`. PC3 contradicts government health coverage with no health coverage. This indicates states with a lower PC3 have a higher amount of individuals with public health coverage. While a higher PC3 score indicates a higher amount of individuals with no health coverage.
+[Name for PC3:]{.underline} *"Public/None Healthcare Coverage and High School Educated Population"*
 
-[Name for PC4:]{.underline} *"Health Coverage"*
+The variables that are most influential for PC3 are `hc_public`, `edu_hs`, `income_median`, and `hc_nohc`. Higher PC3 scores are associated with states that have greater public healthcare coverage and a larger proportion of the population with only a high school diploma. Conversely, negative PC3 scores are linked to states with higher median incomes and a greater percentage of people without health insurance coverage.
 
-The variables that are most influential for PC4 are `InfantMort_GAP` and `hc_nohc`. This indicates states with a higher PC4 score have a higher amount of gaps between minorities and non-minorities in infant mortality rates. While a lower PC4 score indicates states with higher amounts of individuals with no health coverage.
+[Name for PC4:]{.underline} *"Private/None Healthcare Coverage and SNAP"*
 
-[Name for PC5:]{.underline} *"Health Coverage"*
+The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_private`, `edu_hs`, and `total_mort`. High PC4 scores explain states who has higher SNAP rates, private healthcare coverage, and proportion of only high school diploma has higher infant mortality. 
 
-The variables that are most influential for PC5 are `InfantMort_GAP` and `TFR_gap`. PC45contradicts population growth with population decline. This indicates states with a lower PC5 score have a greater gap of total fertility rate between minorities and non-minorities. While a higher PC5 score, indicates a greater gap of infant mortality rate between minoriites and non-minorities.
+[Name for PC5:]{.underline} *"Education Attain and Fertility Rate"*
+
+The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. PC5 indicates that states with higher proportion of residents who only attained some college education explains lower TFR. 
 
 # Sources
 
-“Fertility Rate.” *Encyclopædia Britannica*, Encyclopædia Britannica, Inc., www.britannica.com/topic/fertility-rate. Accessed 26 Feb. 2025.
+“Fertility Rate.” *Encyclopædia Britannica*, Encyclopædia Britannica, Inc., www.britannica.com/topic/fertility-rate. (2025).
 
-Hickerson, Ali. “The US Fertility Rate Is Decreasing: What It Means for the Nation’s Future \| News \| Citynewsokc.Com.” *United States Fertility Rate Is Dropping*, 16 Aug. 2024, www.citynewsokc.com/news/the-us-fertility-rate-is-decreasing-what-it-means-for-the-nations-future/collection_81b09a28-e02f-59b9-b52a-08b15c647dcf.html. Accessed 26 Feb. 2025.
+Hickerson, Ali. “The US Fertility Rate Is Decreasing: What It Means for the Nation’s Future \| News \| Citynewsokc.Com.” *United States Fertility Rate Is Dropping*,  www.citynewsokc.com/news/the-us-fertility-rate-is-decreasing-what-it-means-for-the-nations-future/collection_81b09a28-e02f-59b9-b52a-08b15c647dcf.html. (2024).
 
-Marino, Kate. “Infant Mortality Rates Declining, but Sudden Unexpected Infant Death Is on the Rise.” *Infant Mortality Rates Declining, but Sudden Unexpected Infant Death Is on the Rise \| VCU Health*, 27 Jan. 2025, www.vcuhealth.org/news/infant-mortality-rates-declining-but-sudden-unexpected-infant-death-is-on-the-rise/#:\~:text=Wolf%20attributes%20declining%20overall%20infant,media%20on%20infant%20sleep%20practices.) (https://www.nichd.nih.gov/health/topics/infant-mortality/topicinfo. Accessed 26 Feb. 2025.
+Marino, Kate. “Infant Mortality Rates Declining, but Sudden Unexpected Infant Death Is on the Rise.” *Infant Mortality Rates Declining, but Sudden Unexpected Infant Death Is on the Rise \| VCU Health*,  www.vcuhealth.org/news/infant-mortality-rates-declining-but-sudden-unexpected-infant-death-is-on-the-rise/#:\~:text=Wolf%20attributes%20declining%20overall%20infant,media%20on%20infant%20sleep%20practices.) (https://www.nichd.nih.gov/health/topics/infant-mortality/topicinf.)  (2025).
 
-“Where Does Our Data Come From.” *Centers for Disease Control and Prevention*, 17 May 2023, archive.cdc.gov/www_cdc_gov/surveillance/data-modernization/basics/where_does_our_data_come_from.html. Accessed 26 Feb. 2025.
+“Where Does Our Data Come From.” *Centers for Disease Control and Prevention*, archive.cdc.gov/www_cdc_gov/surveillance/data-modernization/basics/where_does_our_data_come_from.html. (2023).
+
+Ryabov, Igor. "On the relationship between development and fertility: The case of the United States." Comparative Population Studies 40.4 (2015).
+
+Hamilton, Brady E. "Total fertility rates, by maternal educational attainment and race and Hispanic origin: United States, 2019." (2021).
