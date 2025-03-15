@@ -609,6 +609,12 @@ infantMort_eth <- births_deaths1 |>
 print(infantMort_eth)
 ## Mortality numbers are very small, we might have to transform it a bit
 infantMort_eth1 <- infantMort_eth |> select(state,year,InfantMort_GAP)
+
+infantMort1 <- births_deaths1 |> 
+  mutate(
+    total_mort = (deaths_total/(norm_births_nhblack + norm_births_nhwhite + norm_births_hisp + norm_births_otherraceeth))*1000
+  ) |>
+  select(state,year,total_mort)
 ```
 
 Get total fertility by state by year.  
@@ -760,6 +766,14 @@ pop_2021 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/p
 pop_2022 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2022.csv")
 pop_2023 <- read_csv("~/pstat100/final_project/data/fertility_infant_mortality/pop_profile_2023.csv")
 
+pop_2016 <- read.csv("~/Desktop/pop_profiles/pop_profile_2016.csv")
+pop_2017 <- read.csv("~/Desktop/pop_profiles/pop_profile_2017.csv")
+pop_2018 <- read.csv("~/Desktop/pop_profiles/pop_profile_2018.csv")
+pop_2019 <- read.csv("~/Desktop/pop_profiles/pop_profile_2019.csv")
+pop_2021 <- read.csv("~/Desktop/pop_profiles/pop_profile_2021.csv")
+pop_2022 <- read.csv("~/Desktop/pop_profiles/pop_profile_2022.csv")
+pop_2023 <- read.csv("~/Desktop/pop_profiles/pop_profile_2023.csv")
+
 ```
 
 ```{r}
@@ -839,11 +853,16 @@ mutate(region = case_when(          # rename into regions
            state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
            state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
            state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
-           TRUE ~ "missing")) |> select(-state) |>
+           TRUE ~ "missing")) 
+main_popRegion <- main_popRegion |> select(region,everything())
+  
+main_popRegion1 <-main_popRegion |> select(-state) |>
   group_by(region, year) |>
-  summarize(across(everything(), sum)) |> ungroup()
+  summarize(across(-c(income_median,SNAP), sum),
+            income_median = median(income_median),
+            SNAP = mean(SNAP)) |> ungroup()
 
-main_popRegion1 <- main_popRegion |>
+main_popRegion2 <- main_popRegion1 |>
   mutate(
   across(matches("total_[a-z]+_pop"), ~ .x/total_pop),
   across(matches("pop_age[0-9]"), ~ .x/total_pop),
@@ -852,9 +871,30 @@ main_popRegion1 <- main_popRegion |>
   across(matches("hc_[a-z]"), ~ .x/total_pop)
   )
 
-main_popRegion2 <- main_popRegion1 |>
+main_popRegion3 <- main_popRegion2 |>
   left_join(TFR_region1)
+
+#run this for linear regression
+main_popRegion4 <- main_popRegion |>
+  mutate(
+  across(matches("total_[a-z]+_pop"), ~ .x/total_pop),
+  across(matches("pop_age[0-9]"), ~ .x/total_pop),
+  across(matches("ms_[a-z]"), ~ .x/total_pop),
+  across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/total_pop),
+  across(matches("hc_[a-z]"), ~ .x/total_pop)
+  ) |>
+  left_join(TFR_region1) |>
+select(region, state, year, starts_with("edu_"), income_median, SNAP, starts_with("hc"), -edu_attain_pop, total_fer) |>
+  mutate(
+    edu_hsORless = edu_hs + edu_less_hs,
+    edu_bachORmore = edu_bach + edu_grad,
+  )
 ```
+
+```{r}
+
+```
+
 
 ## EDA
 ```{r}
@@ -896,7 +936,13 @@ main_pop4 |>
 
 lr_state <- main_pop4 |>
   select(-c(starts_with("ms_"), "TFR_gap", "InfantMort_GAP", starts_with("pop_age"))) |>
-  left_join(TFR_USstyr) #|>
+  left_join(TFR_USstyr) |>
+  left_join(infantMort1)
+  # mutate(
+  #   edu_hsORless = edu_hs + edu_less_hs,
+  #   edu_bachORmore = edu_bach + edu_grad,
+  # )
+#|>
   # pivot_longer(
   #   cols = starts_with("edu"),
   #   names_to = "edu_attain", # name into 1 column
@@ -909,17 +955,7 @@ lr_state <- main_pop4 |>
   # ) 
 
 lr_state16 <- lr_state |>
-  filter(year == 2016) |> 
-  pivot_longer(
-    cols = starts_with("edu"),
-    names_to = "edu_attain", # name into 1 column
-    values_to = "edu_values"
-  ) |>
-  pivot_longer(
-    cols = starts_with("hc_"),
-    names_to = "health_ins", # name into 1 column
-    values_to = "ins_rate"
-  ) 
+  filter(year == 2016) 
 
 lr_state17 <- lr_state |>
   filter(year == 2017) 
@@ -957,6 +993,7 @@ results <- lr_state %>%
 # View results
 print(results)
 ```
+
 ```{r}
 
 lin_reg <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
@@ -970,9 +1007,173 @@ summary(lin)
 lin_al <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median + hc_private + hc_public + hc_nohc, data = lr_al)
 summary(lin_al)
 ```
+
+###linear regression per year 
+```{r}
+print("2016")
+lin_reg16 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc + total_mort, data = lr_state16)
+summary(lin_reg16)
+
+print("2017")
+lin_reg17 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc + total_mort, data = lr_state17)
+summary(lin_reg17)
+
+print("2018")
+lin_reg18 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc + total_mort, data = lr_state18)
+summary(lin_reg18)
+
+print("2019")
+lin_reg19 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc + total_mort, data = lr_state19)
+summary(lin_reg19)
+
+print("2021")
+lin_reg21 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc + total_mort, data = lr_state21)
+summary(lin_reg21)
+
+print("2022")
+lin_reg22 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc + total_mort, data = lr_state22)
+summary(lin_reg22)
+
+print("2023")
+lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc + total_mort, data = lr_state23)
+summary(lin_reg23)
+
+library(stargazer)
+stargazer(lin_reg16, lin_reg17, lin_reg18, lin_reg19, type = "text",
+          column.labels = c("2016", "2017", "2018", "2019"))
+stargazer(lin_reg21, lin_reg22, lin_reg23, type = "text",
+          column.labels = c("2021", "2022", "2023"))
+
+library(broom)
+library(dplyr)
+results <- bind_rows(
+  tidy(lin_reg16),
+  tidy(lin_reg17)
+)
+```
+
+### linear regression per region by year
+```{r}
+midw_reg <- main_popRegion4 |>
+  filter(region == "Midwest")
+
+midw_reg16 <- midw_reg |>
+  filter(year == 2016)
+midw_reg17 <- midw_reg |>
+  filter(year == 2017)
+midw_reg18 <- midw_reg |>
+  filter(year == 2018)
+midw_reg19 <- midw_reg |>
+  filter(year == 2019)
+midw_reg21 <- midw_reg |>
+  filter(year == 2021)
+midw_reg22 <- midw_reg |>
+  filter(year == 2022)
+midw_reg23 <- midw_reg |>
+  filter(year == 2023)
+
+model <- lm(total_fer ~ edu_hsORless + edu_somecoll + edu_bachORmore + 
+                SNAP + hc_private + hc_public + hc_nohc, data = midw_reg16)
+summary(model)
+
+```
+
+
+```{r}
+noeast_reg <- main_popRegion |>
+  filter(region == "Northeast")
+
+noeast_reg16 <- noeast_reg |>
+  filter(year == 2016)
+noeast_reg17 <- noeast_reg |>
+  filter(year == 2017)
+noeast_reg18 <- noeast_reg |>
+  filter(year == 2018)
+noeast_reg19 <- noeast_reg |>
+  filter(year == 2019)
+noeast_reg21 <- noeast_reg |>
+  filter(year == 2021)
+noeast_reg22 <- noeast_reg |>
+  filter(year == 2022)
+noeast_reg23 <- noeast_reg |>
+  filter(year == 2023)
+
+soeast_reg <- main_popRegion |>
+  filter(region == "Southeast")
+
+soeast_reg16 <- soeast_reg |>
+  filter(year == 2016)
+soeast_reg17 <- soeast_reg |>
+  filter(year == 2017)
+soeast_reg18 <- soeast_reg |>
+  filter(year == 2018)
+soeast_reg19 <- soeast_reg |>
+  filter(year == 2019)
+soeast_reg21 <- soeast_reg |>
+  filter(year == 2021)
+soeast_reg22 <- soeast_reg |>
+  filter(year == 2022)
+soeast_reg23 <- soeast_reg |>
+  filter(year == 2023)
+
+sowest_reg <- main_popRegion |>
+  filter(region == "Southeast")
+
+sowest_reg16 <- sowest_reg |>
+  filter(year == 2016)
+sowest_reg17 <- sowest_reg |>
+  filter(year == 2017)
+sowest_reg18 <- sowest_reg |>
+  filter(year == 2018)
+sowest_reg19 <- sowest_reg |>
+  filter(year == 2019)
+sowest_reg21 <- sowest_reg |>
+  filter(year == 2021)
+sowest_reg22 <- sowest_reg |>
+  filter(year == 2022)
+sowest_reg23 <- sowest_reg |>
+  filter(year == 2023)
+
+west_reg <- main_popRegion |>
+  filter(region == "West")
+
+west_reg16 <- west_reg |>
+  filter(year == 2016)
+west_reg17 <- west_reg |>
+  filter(year == 2017)
+west_reg18 <- west_reg |>
+  filter(year == 2018)
+west_reg19 <- west_reg |>
+  filter(year == 2019)
+west_reg21 <- west_reg |>
+  filter(year == 2021)
+west_reg22 <- west_reg |>
+  filter(year == 2022)
+west_reg23 <- west_reg |>
+  filter(year == 2023)
+
+run_regression <- function(data, region, year) {
+  # Filter data by region and year
+  region_year_data <- data |> filter(region == !!region, year == !!year)
+  
+  # Run the linear regression
+  model <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach + edu_grad + 
+                SNAP + hc_private + hc_public + hc_nohc, data = region_year_data)
+  
+  return(model)
+}
+
+midwest_regression_2016 <- run_regression(main_popRegion4, "Midwest", 2016)
+
+# Get summary of the regression model
+summary(midwest_regression_2016)
+```
+
+
 ```{r}
 no_state <- main_pop4 |>
-  select(-c("state", starts_with("pop_age"), starts_with("ms_"))) 
+  select(-c("state", starts_with("pop_age"), starts_with("ms_"),year)) 
+
 pca <- prcomp(no_state, center = TRUE, scale. = TRUE)
 
 #pca$rotation

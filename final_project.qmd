@@ -37,3 +37,15 @@ The dataset comes from the United States Census Bureau under the category Americ
 ```{r}
 print("Hello")
 ```
+
+# Linear Regression
+
+In this part, we'll use linear regression to see which predictors are significant for each year. We are going to regress total fertility on education attainment, economic indicators, health coverage, and infant mortality.
+
+$$
+\text{total_fer}
+    = \beta_0 + \underbrace{\beta_1\left(\text{less hs}\right)_i + \cdots + \beta_5\left(\text{grad}\right)_i}_{\text{education attainment}} 
+    + \underbrace{\beta_6\text{income_median}_i + \beta_7\text{SNAP}_i}_{\text{economic indicators}}
+    + \underbrace{\beta_8\text{private}_i + \cdots + \beta_{10}\text{no coverage}_i}_{\text{health coverage}}
+    + \underbrace{\beta_{11}\text{total_mort}_i}_{\text{infant mortality}} + \epsilon_i
+$$
