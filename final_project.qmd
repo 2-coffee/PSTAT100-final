@@ -16,9 +16,8 @@ library(forcats)
 library(qtl2)
 library(janitor)
 library(corrplot)
-library(magrittr)
+#library(magrittr)
 library(tidyverse)
-library(magrittr)
 library(gt)
 
 fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv") #fertility data
@@ -426,41 +425,48 @@ lr_state22 <- lr_state |>
 lr_state23 <- lr_state |>
   filter(year == 2023)
 
+print("2016")
 lin_reg16 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
-
+summary(lin_reg16)
+print("2017")
 lin_reg17 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
-
+summary(lin_reg17)
+print("2018")
 lin_reg18 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
-
+summary(lin_reg18)
+print("2019")
 lin_reg19 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
-
+summary(lin_reg19)
+print("2021")
 lin_reg21 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
-
+summary(lin_reg21)
+print("2022")
 lin_reg22 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
-
+summary(lin_reg22)
+print("2023")
 lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
-
-# print("2016")
-# lin_reg16_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
-# summary(lin_reg16_mor)
-# print("2017")
-# lin_reg17_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
-# summary(lin_reg17_mor)
-# print("2018")
-# lin_reg18_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
-# summary(lin_reg18_mor)
-# print("2019")
-# lin_reg19_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
-# summary(lin_reg19_mor)
-# print("2021")
-# lin_reg21_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
-# summary(lin_reg21_mor)
-# print("2022")
-# lin_reg22_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
-# summary(lin_reg22_mor)
-# print("2023")
-# lin_reg23_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
-# summary(lin_reg23_mor)
+summary(lin_reg23)
+print("2016")
+lin_reg16_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
+summary(lin_reg16_mor)
+print("2017")
+lin_reg17_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
+summary(lin_reg17_mor)
+print("2018")
+lin_reg18_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
+summary(lin_reg18_mor)
+print("2019")
+lin_reg19_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
+summary(lin_reg19_mor)
+print("2021")
+lin_reg21_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
+summary(lin_reg21_mor)
+print("2022")
+lin_reg22_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
+summary(lin_reg22_mor)
+print("2023")
+lin_reg23_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
+summary(lin_reg23_mor)
 ```
 
 # Principal Component Analysis (PCA)
@@ -570,25 +576,26 @@ main_popEDU <- main_pop4 |> select(state,year,income_median,starts_with("hc_"),t
   arrange(edu_gap,region)
 
 main_popEDU |>
-  select(state, region, total_fer, total_mort, edu_gap, income_median, hc_private, hc_public, hc_nohc) |>
-  head() |>
-  gt() |>
-  cols_label(
-    state = "State",
-    region = "Region",
-    total_fer = "Total Fertility",
-    total_mort = "Total Mortality",
-    edu_gap = "Education Gap",
-    income_median = "Household Median Income ($)",
-    hc_private = "Private Health Coverage",
-    hc_public = "Public Health Coverage",
-    hc_nohc = "No Health Coverage"
+  select(state, region, total_fer, total_mort, edu_gap, hc_private, hc_public, hc_nohc) |>
+  mutate(
+    state = case_when(
+      state == "West Virginia" ~ "WV",
+      state == "Nevada" ~ "NV",
+      state == "Arkansas" ~ "AR",
+      state == "Mississippi" ~ "MS",
+      state == "Kentucky" ~ "KY",
+      state == "Louisiana" ~ "LA",
+      TRUE ~ state
+    ),
+    region = case_when(
+      region == "Northeast" ~ "NE",
+      region == "Southeast" ~ "SE",
+      region == "West" ~ "W",
+      region == "Northwest" ~ "NW",
+    TRUE ~ state
+    )
   ) |>
-  fmt_number(columns = income_median, suffixing = TRUE) 
-
-main_popEDU |>
-  select(state, region, total_fer, total_mort, edu_gap, income_median, hc_private, hc_public, hc_nohc) |>
-  tail() |>
+  head() |>
   gt() |>
   tab_header(
     title = "Sorted by Educational Attainment Gap"
@@ -596,26 +603,56 @@ main_popEDU |>
   cols_label(
     state = "State",
     region = "Region",
-    total_fer = "Total Fertility",
-    total_mort = "Total Mortality",
-    edu_gap = "Education Gap",
-    income_median = "Household Median Income ($)",
-    hc_private = "Private Health Coverage",
-    hc_public = "Public Health Coverage",
-    hc_nohc = "No Health Coverage"
+    total_fer = "TFR",
+    total_mort = "TIMR",
+    edu_gap = "EDU Gap",
+    #income_median = "Median Income ($)",
+    hc_private = "Private H. Ins.",
+    hc_public = "Public H. Ins.",
+    hc_nohc = "No H. Ins."
+  ) #|>
+  #fmt_number(columns = income_median, suffixing = TRUE) 
+
+main_popEDU |>
+  select(state, region, total_fer, total_mort, edu_gap, hc_private, hc_public, hc_nohc) |>
+  mutate(
+    state = case_when(
+      state == "Connecticut" ~ "CT",
+      state == "Virginia" ~ "VA",
+      state == "Colorado" ~ "CO",
+      state == "Maryland" ~ "MD",
+      state == "Massachusetts" ~ "MA",
+      state == "District of Columbia" ~ "DC",
+      TRUE ~ state
+    ),
+    region = case_when(
+      region == "Northeast" ~ "NE",
+      region == "Southeast" ~ "SE",
+      region == "West" ~ "W",
+      region == "Northwest" ~ "NW",
+    TRUE ~ state
+    )
   ) |>
-  fmt_number(columns = income_median, suffixing = TRUE)
-
-head(main_popEDU)
-tail(main_popEDU,7)
-
-main_popEDU |>
-  head() |>
-  gt() 
-
-main_popEDU |>
   tail(, 7) |>
-  gt()
+  gt() |>
+  tab_header(
+    title = "Sorted by Educational Attainment Gap"
+  ) |>
+  cols_label(
+    state = "State",
+    region = "Region",
+    total_fer = "TFR",
+    total_mort = "TIMR",
+    edu_gap = "EDU Gap",
+    #income_median = "Median Income ($)",
+    hc_private = "Private H. Ins.",
+    hc_public = "Public H. Ins.",
+    hc_nohc = "No H. Ins."
+  ) #|>
+  #fmt_number(columns = income_median, suffixing = TRUE)
+
+# head(main_popEDU)
+# tail(main_popEDU,7)
 ```
 
 The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. I think we should take the average? And talk about how D.C is an outlier.
