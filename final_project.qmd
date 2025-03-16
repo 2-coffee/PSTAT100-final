@@ -163,7 +163,9 @@ births_deaths <- births_deaths %>%
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 births_deaths1 <- births_deaths |>
-  select(state,year,starts_with("deaths"),starts_with("norm_births"),starts_with("births_age"))
+  select(state,year,starts_with("deaths"),starts_with("norm_births"),starts_with("births_age")) |>
+  group_by(state,year) |> #added this
+  summarize(across(everything(), sum))
 
 infantMort_eth <- births_deaths1 |>
   group_by(state,year) |>
