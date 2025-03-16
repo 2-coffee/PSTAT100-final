@@ -716,9 +716,8 @@ main_popEDU |>
   )
 ```
 
-The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. I think we should take the average? And talk about how D.C is an outlier.
-
-As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total fertility rates per woman and higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total fertility rates and lower average total mortality rates.
+The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed.
+I think we should take the average? And talk about how D.C is an outlier.
 
 # Conclusion
 
@@ -729,6 +728,8 @@ As observed in our initial exploration, states in the Southeast region, which ha
 - education gap 
 - problems
   - data by ethnicity, 
+As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total mortality rates. While we did find educational attainment to be statistically significant in total fertility rate, it is inconclusive at the region and state level.   
+Throughout our analysis, we encountered several instances where data for ethnicities, other than Non-Hispanic White, were either omitted or replaced with zeroes. This posed significant challenges in our analysis, as our techniques indicated no statistical significance or produced missing values (NAs). In the future, we would like to obtain and filter data by counties and ethnicities to better assess maternal and infant health disparities in the United States. 
 
 # Sources
 
