@@ -164,7 +164,7 @@ births_deaths <- births_deaths %>%
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 births_deaths1 <- births_deaths |>
   select(state,year,starts_with("deaths"),starts_with("norm_births"),starts_with("births_age")) |>
-  group_by(state,year) |> #added this
+  group_by(state,year) |>
   summarize(across(everything(), sum))
 
 infantMort_eth <- births_deaths1 |>
@@ -610,6 +610,12 @@ edu_gap <- main_pop4 |> select(state,year,starts_with("edu_")) |>
          edu_gap = edu_Degree - edu_noDegree) |>
   select(state,year,edu_gap)
 
+hc_gap <- main_pop4 |> select(state,year,starts_with("hc_")) |> # grouping public and noHC to one column because of PC
+  mutate(
+    hc_PubNo = hc_public + hc_nohc,
+    hc_gap = hc_private - hc_PubNo
+  )
+
 main_popEDU <- main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |>
   left_join(edu_gap) |> select(-year) |>
   group_by(state) |>
@@ -702,25 +708,28 @@ main_popEDU |>
   ) #|>
   #fmt_number(columns = income_median, suffixing = TRUE)
 
-main_popEDU |>
-  select(-c(income_median,starts_with("hc_"),state)) |>
+main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |>
+  left_join(edu_gap) |> left_join(hc_gap) |>
+  group_by(state,year) |>
+  summarize(across(everything(),mean)) |> ungroup() |>
+  mutate(region = case_when(
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing"
+         )) |> select(-state) |>
+  group_by(region,year)  |>
+  summarize(across(everything(),mean)) |>
+  select(region,year, total_fer,total_mort,edu_gap,hc_gap) |>
+  arrange(region,edu_gap) |> ungroup() |> select(-year) |>
   group_by(region) |>
-  summarize(mean_TFR = mean(total_fer),
-          mean_TotalMort = mean(total_mort),
-          Average_EducationGap = mean(edu_gap)) |>
-  arrange(Average_EducationGap) |>
-  gt() |>
-  cols_label(
-    region = "Region",
-    mean_TFR = "Mean TFR",
-    mean_TotalMort = "Mean TIMR",
-    Average_EducationGap = "Mean EDU Gap"
-  )
+  summarize(across(everything(),mean)) |> arrange(edu_gap)
 ```
 
-The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. I think we should take the average? And talk about how D.C is an outlier.
-
-As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total fertility rates per woman and higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total fertility rates and lower average total mortality rates.
+The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed.
+I think we should take the average? And talk about how D.C is an outlier.
 
 # Conclusion
 
@@ -731,6 +740,8 @@ As observed in our initial exploration, states in the Southeast region, which ha
 - education gap 
 - problems
   - data by ethnicity, 
+As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total mortality rates. While we did find educational attainment to be statistically significant in total fertility rate, it is inconclusive at the region and state level.   
+Throughout our analysis, we encountered several instances where data for ethnicities, other than Non-Hispanic White, were either omitted or replaced with zeroes. This posed significant challenges in our analysis, as our techniques indicated no statistical significance or produced missing values (NAs). In the future, we would like to obtain and filter data by counties and ethnicities to better assess maternal and infant health disparities in the United States. 
 
 # Sources
 
