@@ -36,7 +36,7 @@ pop_2023 <- read.csv("~/Desktop/pop_profiles/pop_profile_2023.csv")
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-#fertility
+#adding months January to June
 fertility_update <- fertility_data %>%
   filter(bmcode %in% c(1, 2, 3)) %>%  
   group_by(state, year) %>%  
@@ -45,6 +45,7 @@ fertility_update <- fertility_data %>%
          across(pop_total:pop_age3544, ~./3)) %>% 
   ungroup() 
 
+#adding months July to December together
 fertility_update2 <- fertility_data %>%
   filter(bmcode %in% c(4, 5, 6)) %>%  
   group_by(state, year) %>%  
@@ -53,11 +54,14 @@ fertility_update2 <- fertility_data %>%
          across(pop_total:pop_age3544, ~./3)) %>% 
   ungroup()
 
+#merging fertility_update and fertility_update2
 fertility_merged <- bind_rows(fertility_update, fertility_update2)
 
+#removing year 2024 due to no data
 fertility_merged <- fertility_merged %>% 
   filter(!year == 2024)
 
+#creating proportions and fertility rates
 fertility_merged2 <- fertility_merged %>% 
   select(state:bacode) %>% 
    mutate(
@@ -81,17 +85,21 @@ fertility_merged2 <- fertility_merged %>%
          repro_pop = pop_age1524 + pop_age2534 + pop_age3544,
          )
 
+#normalizing births 
 infant_mort1 <- infant_mortality_biannual_data |>
   rename("infant_births_total"=births_total) |>
   mutate(across(starts_with("births_"), ~ .x/infant_births_total, .names="prop_{.col}")) |>
   select( c(starts_with("deaths_"),starts_with("prop_births"), infant_births_total, state,year,bacode)) |>
   filter(year >=2016) 
 
+#replace NAs with 0s
 infant_mort1 <- infant_mort1 |>
   mutate(across(colnames(infant_mort1), ~ replace_na(.x,0)))
 
+#selecting variables into fertil_merg_filter
 fertil_merg_filter <- fertility_merged2 |> select(c(starts_with("prop_births"),births_total, state, year,bacode)) |> select(11:18)
 
+#normalizing and merging
 prop_only_merge <- infant_mort1 |>
   left_join(fertil_merg_filter, by=join_by(state,year,bacode)) |>
   mutate(
@@ -106,6 +114,7 @@ prop_only_merge <- infant_mort1 |>
   mutate(across(starts_with("deaths_"), ~ round(.x/norm_total_births*1000, 2), .names="infantMort_{.col}")) #|>
   #mutate(across(starts_with("norm_births_"), ~ round(.x/norm_total_births*1000, 2), .names#="fertilityRate_{.col}"))
 
+#merging and creating fertility rate by ethnicity
 fertility_mortality <- fertility_merged2 |>
   left_join(infant_mortality_biannual_data, by = join_by(state,year, bacode)) |>
   select(-c(ends_with(".x"), ends_with(".y"), starts_with("deaths"))) |>
@@ -250,6 +259,10 @@ It should be noted that data for 2020 is not included due to disruptions caused 
 
 # Question of Interest
 
+How do educational, and regional factors influence birth rates and infant mortality trends across the US from 2016 to 2023? Specifically do certain characteristics such as income, and public services like food stamps and health care have a negative, positive, or no effect. As politicians continue to attack the Department of Education, propose cuts on SNAP benefits, and limit access to reproductive healthcare, we are wondering if this will affect future population growth. 
+
+-explain what a satisfactory answer might look like 
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
 
@@ -310,6 +323,23 @@ main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> # Join CDC
 ```
 
 # Exploratory Data Analysis (EDA)
+
+## Fertility and Infant Mortality Rates
+
+$$
+\begin{aligned}
+\text{fert\_age1524} &= \frac{\text{births\_age1524}}{\text{pop\_age1524}} \times 1000 \\
+\text{fert\_age2534} &= \frac{\text{births\_age2534}}{\text{pop\_age2534}} \times 1000 \\
+\text{fert\_age3544} &= \frac{\text{births\_age3544}}{\text{pop\_age3544}} \times 1000 \\
+\text{total\_fer} &= (\text{fert\_age1524} + \text{fert\_age2534} + \text{fert\_age3544}) \times 10
+\end{aligned}
+$$
+
+To calculate total fertility rate, we divided each age group by their designated population and multiplied them by 1000 to standardize into births per 1000 women according to the CDC. We then added the proportions and multiplied by 10, to convert the rate into an estimate of the total number of children a woman would have over her reproductive life. We converted it back to births to woman, for easier interpretation.
+
+$$
+\text{total\_mort} = \frac{\text{deaths\_total}}{\text{total\_births}}
+$$
 
 ## Initial Exploration of CDC Data
 
@@ -386,88 +416,7 @@ main_pop4 |>
 
 - `total_fer`/`total_mort` and `pop_age517`: In both total fertility and mortality rates, states with a higher proportion of individuals aged between 5 and 17 (particularly those aged 15 to 17) tend to have slightly higher rates.
 
-
-# Linear Regression
-
-In this part, we'll use linear regression to see which predictors are significant for each year. We are going to regress total fertility on education attainment, economic indicators, health coverage, and infant mortality.
-
-$$
-\text{total\_fer} = \beta_0 + 
-\underbrace{\beta_1 \text{less hs}_i + \cdots + \beta_5 \text{grad}_i}_{\text{education attainment}} + 
-\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} + 
-\underbrace{\beta_8 \text{private}_i + \cdots + \beta_{10} \text{no coverage}_i}_{\text{health coverage}} \\ + 
-\underbrace{\beta_{11} \text{total\_mort}_i}_{\text{infant mortality}} + \epsilon_i
-$$
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
-
-lr_state <- main_pop4 |>
-  select(-c(starts_with("ms_"),starts_with("pop_age")))
-
-lr_state16 <- lr_state |>
-  filter(year == 2016) 
-
-lr_state17 <- lr_state |>
-  filter(year == 2017) 
-  
-lr_state18 <- lr_state |>
-  filter(year == 2018)
-
-lr_state19 <- lr_state |>
-  filter(year == 2019)
-
-lr_state21 <- lr_state |>
-  filter(year == 2021)
-
-lr_state22 <- lr_state |>
-  filter(year == 2022)
-
-lr_state23 <- lr_state |>
-  filter(year == 2023)
-
-print("2016")
-lin_reg16 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
-summary(lin_reg16)
-print("2017")
-lin_reg17 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
-summary(lin_reg17)
-print("2018")
-lin_reg18 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
-summary(lin_reg18)
-print("2019")
-lin_reg19 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
-summary(lin_reg19)
-print("2021")
-lin_reg21 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
-summary(lin_reg21)
-print("2022")
-lin_reg22 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
-summary(lin_reg22)
-print("2023")
-lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
-summary(lin_reg23)
-print("2016")
-lin_reg16_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
-summary(lin_reg16_mor)
-print("2017")
-lin_reg17_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
-summary(lin_reg17_mor)
-print("2018")
-lin_reg18_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
-summary(lin_reg18_mor)
-print("2019")
-lin_reg19_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
-summary(lin_reg19_mor)
-print("2021")
-lin_reg21_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
-summary(lin_reg21_mor)
-print("2022")
-lin_reg22_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
-summary(lin_reg22_mor)
-print("2023")
-lin_reg23_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
-summary(lin_reg23_mor)
-```
+In the scope of our project, we are going to pick the variables that are the most correlated to total fertility and infant mortality rates. These variables are education attainment, economic indicators, and health coverage. These variables align with social, economic, and healthcare conditions.
 
 # Principal Component Analysis (PCA)
 
@@ -549,6 +498,106 @@ The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `t
 The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. PC5 indicates that states with higher proportion of residents who only attained some college education explains lower TFR.
 
 Overall, it seems that educational attainment explained a lot of TFR and infant mortality.
+
+# Linear Regression
+
+In this part, we'll use linear regression to see which predictors are significant for each year. We are going to regress total fertility and total infant mortality rates on education attainment, economic indicators, and health coverage.
+
+$$
+\text{total\_fer} = \beta_0 + 
+\underbrace{\beta_1 \text{less hs}_i + \cdots + \beta_5 \text{grad}_i}_{\text{education attainment}} + 
+\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} + 
+\underbrace{\beta_8 \text{private}_i + \cdots + \beta_{10} \text{no coverage}_i}_{\text{health coverage}} \\ + 
+ \epsilon_i
+$$
+
+$$
+\text{total\_mort} = \beta_0 + 
+\underbrace{\beta_1 \text{less hs}_i + \cdots + \beta_5 \text{grad}_i}_{\text{education attainment}} + 
+\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} + 
+\underbrace{\beta_8 \text{private}_i + \cdots + \beta_{10} \text{no coverage}_i}_{\text{health coverage}} \\ + 
+ \epsilon_i
+$$
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+lr_state <- main_pop4 |>
+  select(-c(starts_with("ms_"),starts_with("pop_age")))
+
+lr_state16 <- lr_state |>
+  filter(year == 2016) 
+
+lr_state17 <- lr_state |>
+  filter(year == 2017) 
+  
+lr_state18 <- lr_state |>
+  filter(year == 2018)
+
+lr_state19 <- lr_state |>
+  filter(year == 2019)
+
+lr_state21 <- lr_state |>
+  filter(year == 2021)
+
+lr_state22 <- lr_state |>
+  filter(year == 2022)
+
+lr_state23 <- lr_state |>
+  filter(year == 2023)
+
+print("2016")
+lin_reg16 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
+#summary(lin_reg16)
+print("2017")
+lin_reg17 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
+#summary(lin_reg17)
+print("2018")
+lin_reg18 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
+# summary(lin_reg18)
+print("2019")
+lin_reg19 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
+# summary(lin_reg19)
+print("2021")
+lin_reg21 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
+# summary(lin_reg21)
+print("2022")
+lin_reg22 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
+# summary(lin_reg22)
+print("2023")
+lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
+# summary(lin_reg23)
+print("2016")
+lin_reg16_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
+# summary(lin_reg16_mor)
+print("2017")
+lin_reg17_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
+# summary(lin_reg17_mor)
+print("2018")
+lin_reg18_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
+# summary(lin_reg18_mor)
+print("2019")
+lin_reg19_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
+# summary(lin_reg19_mor)
+print("2021")
+lin_reg21_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
+# summary(lin_reg21_mor)
+print("2022")
+lin_reg22_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
+# summary(lin_reg22_mor)
+print("2023")
+lin_reg23_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
+# summary(lin_reg23_mor)
+```
+
+Running the linear regression for each year in 2016 to 2023, we discovered education attainment, less high school to graduate education, and health care are the most significant. As a reminder, 2020 is not included due to COVID-19 disruptions. One thing we noticed was SNAP was significant pre-COVID and not significant post-COVID. (explain maybe why)
+
+The summaries indicate as the proportion of individuals with less knowledge to more, the state's fertility rate decreases. This suggests adults are delaying traditional markers of adulthood such as getting a job, getting married, and having children. This causes adults to have children later on life, which also means having fewer due to reproductive health.  
+
+For total infant mortality, we analyzed education attainment is the most significant predictor from 2016 to 2023. This may suggest states with higher proportions of individuals with degrees have better access to health care resources. Median income was found to be statistically significant to total infant mortality, but essentially increases to approximately 0, making no difference. 
+
+We can conclude educational attainment is significant to both total fertility and infant mortality rate, followed by health insurance coverage.
+
+## Education Gap
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # create two tables where edu_somcoll is grouped with _hs, _less_hs and another table with _bach and _grad grouped.
@@ -651,8 +700,20 @@ main_popEDU |>
   ) #|>
   #fmt_number(columns = income_median, suffixing = TRUE)
 
-# head(main_popEDU)
-# tail(main_popEDU,7)
+main_popEDU |>
+  select(-c(income_median,starts_with("hc_"),state)) |>
+  group_by(region) |>
+  summarize(mean_TFR = mean(total_fer),
+          mean_TotalMort = mean(total_mort),
+          Average_EducationGap = mean(edu_gap)) |>
+  arrange(Average_EducationGap) |>
+  gt() |>
+  cols_label(
+    region = "Region",
+    mean_TFR = "Mean TFR",
+    mean_TotalMort = "Mean TIMR",
+    Average_EducationGap = "Mean EDU Gap"
+  )
 ```
 
 The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. I think we should take the average? And talk about how D.C is an outlier.
@@ -660,6 +721,14 @@ The education gap is calculated by adding the proportions of less than high scho
 As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total fertility rates per woman and higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total fertility rates and lower average total mortality rates.
 
 # Conclusion
+
+- fertility rate vs infant mortality rate
+- correlation matrix
+- pca
+- linear regression
+- education gap 
+- problems
+  - data by ethnicity, 
 
 # Sources
 
