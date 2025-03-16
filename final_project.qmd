@@ -126,6 +126,7 @@ fertility_mortality <- fertility_merged2 |>
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
 births_deaths <- fertility_mortality %>% 
   select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:repro_pop, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth, pop_age1524:pop_age3544 ) |>
   mutate(norm_total_births = round(norm_total_births, 0),
@@ -141,9 +142,11 @@ births_deaths <- fertility_mortality %>%
 births_deaths <- births_deaths %>% 
   left_join(median_income, by = c("state", "year"))
 
+# separate population to not doublecount
 pop_state <- fertility_mortality |> select(year,matches("pop_age[0-9]")) |> unique() |>
   aggregate(. ~ year, FUN=sum)
 
+# calculate TFR
 fertility_rates <- fertility_mortality |> select(year,matches("births_age[0-9]")) |>
   aggregate(. ~ year, FUN=sum) |>
   left_join(pop_state) |>
@@ -154,7 +157,7 @@ fertility_rates <- fertility_mortality |> select(year,matches("births_age[0-9]")
   mutate(tfr = (fert_age1524+fert_age2534+fert_age3544) * 10 /1000,
          gen_fr = ((births_age1524+births_age2534+births_age3544)/(pop_age1524 + pop_age2534 + pop_age3544))  * 1000)
 
-fertility_rates <- fertility_rates %>% 
+fertility_rates <- fertility_rates %>% # selecting columns
   select(year, tfr, gen_fr )
 
 births_deaths <- births_deaths %>% 
@@ -162,11 +165,14 @@ births_deaths <- births_deaths %>%
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Calculation of total infant mortality
 births_deaths1 <- births_deaths |>
   select(state,year,starts_with("deaths"),starts_with("norm_births"),starts_with("births_age")) |>
   group_by(state,year) |>
   summarize(across(everything(), sum))
 
+# merge to calculate gap between minority and non-minority
+# drop year=2020
 infantMort_eth <- births_deaths1 |>
   group_by(state,year) |>
   summarize(across(everything(), sum)) |>
@@ -183,16 +189,19 @@ infantMort_eth <- births_deaths1 |>
 
 infantMort_eth1 <- infantMort_eth |> select(state,year,InfantMort_GAP)
 
+# total infant mortality
 infantMort1 <- births_deaths1 |> 
   mutate(
     total_mort = (deaths_total/(norm_births_nhblack + norm_births_nhwhite + norm_births_hisp + norm_births_otherraceeth))*1000
   ) |>
   select(state,year,total_mort)
 
+# separate by population to not double count
 popEth_state <- fertility_mortality |> select(state,year,pop_nhblack,pop_nhwhite,pop_hisp,pop_otherraceeth) |> unique() |>
   group_by(state,year) |>
   mutate(pop_minority = pop_nhblack + pop_hisp + pop_otherraceeth)
 
+# Calculate TFR gap between minority and non-minority
 TFR_GAP <- fertility_mortality |> 
   select(state,year,norm_births_nhblack,norm_births_nhwhite,
          norm_births_hisp,norm_births_otherraceeth) |>
@@ -216,6 +225,7 @@ pop_year <- fertility_mortality |> select(year,state,matches("pop_age[0-9]")) |>
   unique() |>
   group_by(state,year)
 
+# calculating TFR another way (by age).
 total_fertilityUS <- fertility_mortality |> select(year,state,matches("births_age[0-9]")) |> 
   filter(year!=2020) |>
   group_by(state,year) |>
@@ -291,12 +301,14 @@ pop_2021m2 <- pop_2021m1|> clean_df(drop_cols)
 pop_2022m2 <- pop_2022m1|> clean_df(drop_cols)
 pop_2023m2 <- pop_2023m1 |> select(year,everything(),-all_of(drop_cols)) |>
     tidyr::separate(population_group,"ethnicity",extra="drop")
-
+ 
+# Merge all 7 years
 pop_pre2020 <- rbind(pop_2016m2,pop_2017m2,pop_2018m2,pop_2019m2)
 pop_post2020 <- rbind(pop_2021m2,pop_2022m2,pop_2023m2)
 main_pop <- rbind(pop_pre2020,pop_post2020)
 
-main_pop1 <- main_pop |> # convert to raw numbers
+# convert to raw numbers
+main_pop1 <- main_pop |> 
   mutate(
     across(matches("total_[a-z]+_pop"), ~ .x/100*total_pop),
     across(matches("pop_age[0-9]"), ~ .x/100*total_pop),
@@ -305,7 +317,9 @@ main_pop1 <- main_pop |> # convert to raw numbers
     SNAP = SNAP/100,
     across(matches("hc_[a-z]"), ~ .x/100*health_cov_pop)
   )
-main_pop2 <- main_pop1 |> select(-ethnicity) |> # convert variables to be proportional to total_pop
+
+# convert variables to be proportional to total_pop
+main_pop2 <- main_pop1 |> select(-ethnicity) |> 
   group_by(state,year) |>
   summarize(across(everything(), sum)) |> ungroup() |>
   mutate(
@@ -315,10 +329,13 @@ main_pop2 <- main_pop1 |> select(-ethnicity) |> # convert variables to be propor
   across(.cols = c(matches("edu_[a-z]") & !matches("edu_attain_pop")), ~ .x/total_pop),
   across(matches("hc_[a-z]"), ~ .x/total_pop)
   )
+
+# drop population columns
 main_pop3 <- main_pop2 |> 
   select(-c(total_pop,marital_status_pop,edu_attain_pop,income_households,health_cov_pop)) 
 
-main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> # Join CDC data with Census
+# Join CDC data with Census
+main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> 
   left_join(TFR_USstyr, by = c("state", "year")) |>
   left_join(infantMort1, by = c("state", "year"))
 
@@ -349,6 +366,7 @@ $$
 inf_fer_rates  <- births_deaths |> select(state, year, bacode, infantMort_deaths_nhblack:region, -infantMort_deaths_con,-infantMort_deaths_noncon,
                         -infantMort_deaths_neo,-infantMort_deaths_total) 
 
+# Calculation of Infant mortality by race
 inf_fer_rates1 <- inf_fer_rates |> select(state:infantMort_deaths_otherraceeth,region) |>
   pivot_longer(
     cols = starts_with("infantMort_"),
@@ -361,7 +379,7 @@ inf_fer_rates1 <- inf_fer_rates |> select(state:infantMort_deaths_otherraceeth,r
                             "infantMort_deaths_nhwhite" = "Non-Hispanic White",
                             "infantMort_deaths_otherraceeth" = "Other Race"))
 
-
+# rates byannually
 inf_fer_rates2 <- inf_fer_rates  |> select(c(state:bacode, fer_rate_nhblack:region)) |>
   pivot_longer(
     cols= starts_with("fer_rate"),
@@ -477,30 +495,25 @@ print(loadings_plot)
 
 [Name for PC1:]{.underline} *"Education Attainment and Infant Mortality"*
 
-The variables that are most influential are `edu_bach`, `edu_grad`, `ed_less_hs`, `total_mort`, and `hc_private`. States with higher levels of educational attainment tend to have lower total infant mortality rates, while states with larger populations of individuals with only a high school diploma or less show a correlation with higher total infant mortality. Additionally, private healthcare is negatively correlated with infant mortality and positively associated with higher levels of education.
-
-Positive PC1 represents states with lower infant mortality due to higher education and better health coverage, while negative PC1 represents those with higher infant mortality due to lower education and limited to no health coverage.
+The variables that are most influential are `edu_bach`, `edu_grad`, `ed_less_hs`, `total_mort`, and `hc_private`. States with high PC1 indicates a relatively higher proportion of residents with private insurance, bachelor degree, and graduate degrees. While states with a lower PC1 value indicates a relatively higher proportion of residents who has less than a high school education and higher infant mortality.
 
 [Name for PC2:]{.underline} *"Education and Income"*
 
-The variables that are most influential for PC2 are `edu_somecoll`, `income_median`, `SNAP`, `total_fer`, and `edu_grad`. States with higher rates of residents who only attained some college education has higher TFR, on the other hand, states with higher total graduates, higher income median, and SNAP rate signaled lower TFR.
+The variables that are most influential for PC2 are `edu_somecoll`, `income_median`, `SNAP`, `total_fer`, and `edu_grad`. States with a high PC2 value indicate higher proportions of residents who only attained some college education and has higher TFR, on the other hand, states with low PC2 values has a higher proportion graduate degrees, higher income median, and SNAP rate.
 
 [Name for PC3:]{.underline} *"Public/None Healthcare Coverage and High School Educated Population"*
 
-The variables that are most influential for PC3 are `hc_public`, `edu_hs`, `income_median`, and `hc_nohc`. Higher PC3 scores are associated with states that have greater public healthcare coverage and a larger proportion of the population with only a high school diploma. Conversely, negative PC3 scores are linked to states with higher median incomes and a greater percentage of people without health insurance coverage.
+The variables that are most influential for PC3 are `hc_public`, `edu_hs`, `income_median`, and `hc_nohc`. Lower PC3 scores are associated with states that have greater public healthcare coverage and a larger proportion of the population with only a high school diploma. Conversely, high PC3 scores are linked to states with higher median incomes and a greater percentage of people without health insurance coverage.
 
 [Name for PC4:]{.underline} *"Private/None Healthcare Coverage and SNAP"*
 
-The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_private`, `edu_hs`, and `total_mort`. High PC4 scores explain states who has higher SNAP rates, private healthcare coverage, and proportion of only high school diploma has higher infant mortality.
+The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_private`, `edu_hs`, and `total_mort`. High PC4 scores explain states who has higher SNAP rates, proportion of private healthcare coverage, proportion of only high school diploma, and has higher infant mortality. Whereas a low PC4 indicates relatively higher proportion of citizens who has no healthcare coverage.
 
 [Name for PC5:]{.underline} *"Education Attain and Fertility Rate"*
 
-The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. PC5 indicates that states with higher proportion of residents who only attained some college education explains lower TFR.
-
-The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. PC5 indicates that states with higher proportion of residents who only attained some college education explains lower TFR.
-
-Overall, it seems that educational attainment explained a lot of TFR and infant mortality.
-
+The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. High PC5 indicates states with higher proportion of residents who only attained some college education. Lower PC5 scores indicate states who has a relatively higher proportion of high school graduates, graduate degrees, and higher TFR.
+  
+Overall, it seems that educational attainment explained a lot of the variation in our data.
 # Linear Regression
 
 In this part, we'll use linear regression to see which predictors are significant for each year. We are going to regress total fertility and total infant mortality rates on education attainment, economic indicators, and health coverage.
