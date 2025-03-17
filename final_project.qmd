@@ -277,7 +277,8 @@ How do educational, and regional factors influence birth rates and infant mortal
 
 As politicians continue to attack the Department of Education, propose cuts on SNAP benefits, and limit access to reproductive healthcare, we are wondering if this will affect future population growth.
 
--explain what a satisfactory answer might look like
+-explain what a satisfactory answer might look like:
+A satisfactory answer is one in which we find variables that can explain, or at least influence, fertility and infant moratility data for each state and region.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
@@ -665,24 +666,26 @@ In conclusion educational attainment is significant to both total fertility and 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # create two tables where edu_somcoll is grouped with _hs, _less_hs and another table with _bach and _grad grouped.
 # check states with higher educational attainment and their region, see how well it correlates with the regions in our initial EDA.
-edu_gap <- main_pop4 |> select(state,year,starts_with("edu_")) |>
+edu_gap <- main_pop4 |> select(state,year,starts_with("edu_")) |> 
   mutate(edu_noDegree = edu_less_hs + edu_hs + edu_somecoll,
          edu_Degree = edu_bach + edu_grad,
          edu_gap = edu_Degree - edu_noDegree) |>
   select(state,year,edu_gap)
 
-hc_gap <- main_pop4 |> select(state,year,starts_with("hc_")) |> # grouping public and noHC to one column because of PC
+# grouping public and noHC to one column because of PC
+hc_gap <- main_pop4 |> select(state,year,starts_with("hc_")) |> 
   mutate(
     hc_PubNo = hc_public + hc_nohc,
-    hc_gap = hc_private - hc_PubNo
+    hc_gap = hc_private - hc_PubNo # calculate healthcare gap between private and poorer residents.
   )
 
-main_popEDU <- main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |>
+# group and merge them
+main_popEDU <- main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |> 
   left_join(edu_gap) |> select(-year) |>
   group_by(state) |>
   arrange(desc(abs(edu_gap))) |> slice(1) |> # get years for states with biggest gaps
-  ungroup() |>
-  mutate(region = case_when(
+  ungroup() |>  # by region
+  mutate(region = case_when( 
            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
            state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
            state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
@@ -693,7 +696,7 @@ main_popEDU <- main_pop4 |> select(state,year,income_median,starts_with("hc_"),t
   select(region,total_fer,total_mort,edu_gap,everything()) |>
   arrange(edu_gap,region)
 
-main_popEDU |>
+main_popEDU |> # renaming for cleaner table
   select(state, region, total_fer, total_mort, edu_gap, hc_private, hc_public, hc_nohc) |>
   mutate(
     state = case_when(
@@ -731,7 +734,7 @@ main_popEDU |>
   ) #|>
   #fmt_number(columns = income_median, suffixing = TRUE) 
 
-main_popEDU |>
+main_popEDU |> # renaming for cleaner tables
   select(state, region, total_fer, total_mort, edu_gap, hc_private, hc_public, hc_nohc) |>
   mutate(
     state = case_when(
@@ -769,7 +772,8 @@ main_popEDU |>
   ) #|>
   #fmt_number(columns = income_median, suffixing = TRUE)
 
-main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |>
+# merging to get region average for each variable of significance
+main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |> 
   left_join(edu_gap) |> left_join(hc_gap) |>
   group_by(state,year) |>
   summarize(across(everything(),mean)) |> ungroup() |>
@@ -828,7 +832,7 @@ As observed in our initial exploration, states in the Southeast region, which ha
     -   data by ethnicity, 
     
     Fertility and infant mortality rate places a huge role in population growth and indicating a country's overall health, reflecting the social, economic, and healthcare conditions. As we proceed into the future, we are questioning how major conflicts are going to impact our population. Through this project, we went through different methods to explore fertility and infant mortality rates across U.S. states. We identified the different trends within ethnicities for U.S. regions and found Non-Hispanic White populations had the highest variation in infant mortality among the other ethnic groups. In addition, age groups, marital status, economic indicators, and health coverage are correlated with total fertility and infant mortality rates. We identified education attainment and healthcare coverage as the most significant patterns using PCA and tested their significance with linear regression for both TFR and IMR. Using linear regression, we saw the change of estimates of significant predictiors across years. Seeing the importance of educational attainment, we examined the education gaps with the highest and lowest differences in higher education (graduate and above) and lower education (bachelors and below). We used the table to examine other trends in the different categories of healthcare coverage. (Add Averages Per Region)
-        Throughout our analysis, we encountered several instances where data for ethnicities, other than Non-Hispanic White, were either omitted or replaced with zeroes. This posed significant challenges in our analysis, as our techniques indicated no statistical significance or produced missing values (NAs). In the future, we would like to obtain and filter data by counties and ethnicities to better assess maternal and infant health disparities in the United States.
+        Throughout our analysis, we encountered several instances where data for ethnicities, other than Non-Hispanic White, were either omitted or replaced with zeroes. This posed significant challenges in our analysis, as our techniques indicated no statistical significance or produced missing values (NAs). In the future, we would like to obtain and filter data by counties and ethnicities to better assess maternal and infant health disparities in the United States. It would also be very interesting to see if voting patterns correlated with educational gap for each state and their counties.
 
 # Sources
 
