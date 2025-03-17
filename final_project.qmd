@@ -277,7 +277,7 @@ How do educational, and regional factors influence birth rates and infant mortal
 
 As politicians continue to attack the Department of Education, propose cuts on SNAP benefits, and limit access to reproductive healthcare, we are wondering if this will affect future population growth.
 
-A satisfactory answer is one in which we find variables that can explain, or at least influence, fertility and infant mortality data for  state and region levels.
+A satisfactory answer is one in which we find variables that can explain, or at least influence, fertility and infant mortality data for  state and region.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
@@ -407,7 +407,7 @@ inf_fer_rates_main |> ggplot(aes(y=InfantMortality, x=FertilityRate, col=ethnici
 
 ```
 
-When analyzing birth rates, it's important to account for the relationship between fertility and infant mortality rates. Since higher fertility rates often correlate with higher raw infant mortality rates, we normalize the data by calculating standardized fertility and infant mortality rates to ensure accurate comparisons. To improve visibility, we grouped states by region, because coloring by state was unclear.
+When analyzing birth rates, it's important to account for the relationship between fertility and infant mortality rates. Since higher fertility rates often correlate with higher raw infant mortality rates, we normalize the data by calculating standardized fertility and infant mortality rates to ensure accurate comparisons. To improve visibility, we grouped states by region, because faceting by state was unclear.
 
 Across all five regions, the "Other race" category consistently shows both lower fertility and infant mortality rates. In contrast, fertility rates for Non-Hispanic White populations exhibit little variation, whereas their infant mortality rates show the highest variation among the four ethnic groups.
 
