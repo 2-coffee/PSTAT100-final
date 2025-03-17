@@ -19,6 +19,8 @@ library(corrplot)
 #library(magrittr)
 library(tidyverse)
 library(gt)
+library(knitr)
+library(kableExtra)
 
 fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv") #fertility data
 
@@ -507,7 +509,7 @@ print(loadings_plot)
 
 [Name for PC1:]{.underline} *"Education Attainment and Infant Mortality"*
 
-The variables that are most influential are `edu_bach`, `edu_grad`, `ed_less_hs`, `total_mort`, and `hc_private`. States with high PC1 indicates a relatively higher proportion of residents with private insurance, bachelor degree, and graduate degrees. While states with a lower PC1 value indicates a relatively higher proportion of residents who has less than a high school education and higher infant mortality.
+The variables that are most influential are `edu_bach`, `edu_grad`, `ed_less_hs`, `total_mort`, and `hc_private`. States with high PC1 scores indicate a relatively higher than average proportion of residents with private insurance, bachelors degree, and graduate degrees. While states with a lower PC1 value indicates a relatively higher than average proportion of residents who have less than a high school education and higher infant mortality rate.
 
 [Name for PC2:]{.underline} *"Education and Income"*
 
@@ -625,13 +627,40 @@ lin_reg23_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach 
 summary(lin_reg23_mor)
 ```
 
-Running the linear regression for each year in 2016 to 2023, we discovered education attainment, less high school to graduate education, and health care are the most significant. As a reminder, 2020 is not included due to COVID-19 disruptions. One thing we noticed was SNAP was significant pre-COVID and not significant post-COVID. (explain maybe why)
+```{r}
+fertility_table <- data.frame(
+  Year = c(2016, 2017, 2018, 2019, 2021, 2022, 2023),
+  Bachelor = c(-4.093e+00, -4.566e+00, -3.589e+00, -4.203e+00, -4.034e+00, -3.595e+00, -3.887e+00),
+  Graduate = c(-3.959e+00, -3.107e+00, -4.067e+00, -3.496e+00, -3.360e+00, -3.909e+00, -4.029e+00),
+  `Public Healthcare` = c(-3.869e+00, -3.913e+00, -3.154e+00, -2.858e+00, -2.441e+00, NA, NA)
+)
 
-The summaries indicate as the proportion of individuals with less knowledge to more, the state's fertility rate decreases. This suggests adults are delaying traditional markers of adulthood such as getting a job, getting married, and having children. This causes adults to have children later on life, which also means having fewer due to reproductive health.
+mortality_table <- data.frame(
+  Year = c(2016, 2017, 2018, 2019, 2021, 2022, 2023),
+  Bachelor = c(-9.274e+01 , -8.553e+01 , -6.304e+01, -6.309e+01, -6.566e+01, -6.537e+01, -6.243e+01  ),
+  Graduate = c(NA, NA, -4.420e+01, NA, -4.097e+01, -5.614e+01, NA),
+  `Median Income` = c(NA, 1.879e-05, 2.392e-05, NA, 1.416e-05, 1.238e-05, 1.319e-05)
+)
 
-For total infant mortality, we analyzed education attainment is the most significant predictor from 2016 to 2023. This may suggest states with higher proportions of individuals with degrees have better access to health care resources. Median income was found to be statistically significant to total infant mortality, but essentially increases to approximately 0, making no difference.
+fertility_table |>
+  kable(caption = "Total Fertility Rate Analysis") |>
+  kable_classic_2()
 
-We can conclude educational attainment is significant to both total fertility and infant mortality rate, followed by health insurance coverage.
+mortality_table |>
+  kable(caption = "Total Infant Mortality Rate Analysis") |>
+  kable_classic_2()
+```
+
+
+Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate, revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
+
+Public health insurance also had a significant negative association with fertility rates from 2016 to 2021. States with higher proportions of individuals with public health insurance tend to have lower fertility rates. Public health's strongest negative effect occurred in 2016 and 2017, and dropped significantly in 2022, indicating it might be more muted over the years. 
+
+For total infant mortality rate, a similar pattern was observed, with bachelor's showing a consistently negative significance from 2016 to 2023. Graduate degree had a significant negative effect between 2018 to 2022. The strongest negative effect for bachelor's education was in 2016, and gradually decreases, reaching its lowest effect in 2023. However for graduate's education, the strongest negative effect occurred in 2022.
+
+Income median was also statistically significant for total infant mortality, but is approximately 0, making no impact on infant mortality rates. 
+
+In conclusion educational attainment is significant to both total fertility and infant mortality rate, with health insurance also playing a role in fertility rates.
 
 ## Education Gap
 
@@ -756,10 +785,34 @@ main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_
          )) |> select(-state) |>
   group_by(region,year)  |>
   summarize(across(everything(),mean)) |>
-  select(region,year, total_fer,total_mort,edu_gap,hc_gap) |>
+  select(region, year, total_fer,total_mort,edu_gap,hc_gap) |>
   arrange(region,edu_gap) |> ungroup() |> select(-year) |>
   group_by(region) |>
-  summarize(across(everything(),mean)) |> arrange(edu_gap)
+  summarize(across(everything(),mean)) |> arrange(edu_gap) |>
+  mutate(
+    region = case_when(
+      region == "Northeast" ~ "NE",
+      region == "Southeast" ~ "SE",
+      region == "West" ~ "W",
+      region == "Northwest" ~ "NW",
+      region == "Southwest" ~ "SW",
+      region == "Midwest" ~ "MW",
+    TRUE ~ region
+    )) |>
+  gt() |>
+  tab_header(
+    title = "Averages Per Region"
+  ) |>
+  cols_label(
+    total_fer = "TFR",
+    total_mort = "TIMR",
+    edu_gap = "EDU Gap",
+    hc_gap = "Health Care Gap"
+  )
+
+      
+
+
 ```
 
 The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. I think we should take the average? And talk about how D.C is an outlier.
