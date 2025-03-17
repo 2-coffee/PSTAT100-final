@@ -812,8 +812,6 @@ main_popEDU |> # renaming for cleaner tables
 #   )
 ```
 
-The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. I think we should take the average? And talk about how D.C is an outlier.
-
 As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total mortality rates. While we did find educational attainment to be statistically significant in total fertility rate, it is inconclusive at the region and state level.
 
 # Conclusion
