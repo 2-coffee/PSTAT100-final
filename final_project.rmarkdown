@@ -233,6 +233,8 @@ TFR_USstyr <- total_fertilityUS |> select(state,year,total_fer) |>
 
 ```
 
+
+
 # Background
 
 The Infant Mortality and Fertility Rates Dataset provides data on infant mortality rates (measured as the number of infant deaths per 1,000 live births) and fertility rates (measured as the number of births per 1,000 women per year) across U.S. states. The Infant Mortality Dataset covers the years 2003 to 2023, while the Fertility Rates Dataset spans 2016 to 2023.
@@ -266,6 +268,8 @@ How do educational, and regional factors influence birth rates and infant mortal
 As politicians continue to attack the Department of Education, propose cuts on SNAP benefits, and limit access to reproductive healthcare, we are wondering if this will affect future population growth.
 
 -explain what a satisfactory answer might look like
+
+
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
@@ -326,6 +330,8 @@ main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> # Join CDC
 
 ```
 
+
+
 # Exploratory Data Analysis (EDA)
 
 ## Fertility and Infant Mortality Rates
@@ -348,6 +354,8 @@ $$
 To calculate total infant mortality rate, we divided total number of infant deaths by the total number of births. Since we combined the Fertility and Infant Mortality datasets, we had to normalize due to the datasets having a slight difference in ethnicity-based birth counts.
 
 ## Initial Exploration of CDC Data
+
+
 
 ```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
 inf_fer_rates  <- births_deaths |> select(state, year, bacode, infantMort_deaths_nhblack:region, -infantMort_deaths_con,-infantMort_deaths_noncon,
@@ -387,6 +395,8 @@ inf_fer_rates_main |> ggplot(aes(y=InfantMortality, x=FertilityRate, col=ethnici
 
 ```
 
+
+
 When analyzing birth rates, it's important to account for the relationship between fertility and infant mortality rates. Since higher fertility rates often correlate with higher raw infant mortality rates, we normalize the data by calculating standardized fertility and infant mortality rates to ensure accurate comparisons. To improve visibility, we grouped states by region, because coloring by state was unclear.
 
 Across all five regions, the "Other race" category consistently shows both lower fertility and infant mortality rates. In contrast, fertility rates for Non-Hispanic White populations exhibit little variation, whereas their infant mortality rates show the highest variation among the four ethnic groups.
@@ -401,12 +411,16 @@ It should be noted that coloring and filtering by year did not yield a noticeabl
 
 The correlation matrix allow us to examine the relationships between `total_fer` and `total_mort` with various socioeconomic and demographic factors.
 
+
+
 ```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
 main_pop4 |>
   select(-c("state", "year")) |>
   cor(use = "complete.obs") |>
   corrplot()
 ```
+
+
 
 -   `total_fer` and `edu_somecoll`: States with a higher proportion of individuals with some college education tend to have a slightly higher total fertility rate.
 
@@ -426,9 +440,7 @@ Given the presence of correlated variables, we will apply Principal Component An
 
 # Principal Component Analysis (PCA)
 
-We are going to identify the most significant patterns in the data while minimizing information loss.
 
-To determine the optimal number of components, we plotted the proportion of variance explained and the cumulative variance. From the visuals, we identified that five components capture about 80% of the total variance.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 no_state <- main_pop4 |>
@@ -466,10 +478,6 @@ print(var_explained_plot)
 
 ```
 
-## Examining Loadings
-
-Next, we will identify the variables that contribute the most to each principal component by examing their positive and negative weights. This will help us discover patterns.
-
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 num_pc <- 5
 loading_df <- pca$rotation[, 1:num_pc]
@@ -486,6 +494,8 @@ geom_line(aes(group = Variable)) + geom_point() + geom_vline(aes(xintercept = ze
 
 print(loadings_plot)
 ```
+
+
 
 [Name for PC1:]{.underline} *"Education Attainment and Infant Mortality"*
 
@@ -535,6 +545,8 @@ $$
  \epsilon_i
 $$
 
+
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
 lr_state <- main_pop4 |>
@@ -563,47 +575,49 @@ lr_state23 <- lr_state |>
 
 print("2016")
 lin_reg16 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
-summary(lin_reg16)
+#summary(lin_reg16)
 print("2017")
 lin_reg17 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
-summary(lin_reg17)
+#summary(lin_reg17)
 print("2018")
 lin_reg18 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
-summary(lin_reg18)
+# summary(lin_reg18)
 print("2019")
 lin_reg19 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
-summary(lin_reg19)
+# summary(lin_reg19)
 print("2021")
 lin_reg21 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
-summary(lin_reg21)
+# summary(lin_reg21)
 print("2022")
 lin_reg22 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
-summary(lin_reg22)
+# summary(lin_reg22)
 print("2023")
 lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
-summary(lin_reg23)
+# summary(lin_reg23)
 print("2016")
 lin_reg16_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
-summary(lin_reg16_mor)
+# summary(lin_reg16_mor)
 print("2017")
 lin_reg17_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
-summary(lin_reg17_mor)
+# summary(lin_reg17_mor)
 print("2018")
 lin_reg18_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
-summary(lin_reg18_mor)
+# summary(lin_reg18_mor)
 print("2019")
 lin_reg19_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
-summary(lin_reg19_mor)
+# summary(lin_reg19_mor)
 print("2021")
 lin_reg21_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
-summary(lin_reg21_mor)
+# summary(lin_reg21_mor)
 print("2022")
 lin_reg22_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
-summary(lin_reg22_mor)
+# summary(lin_reg22_mor)
 print("2023")
 lin_reg23_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
-summary(lin_reg23_mor)
+# summary(lin_reg23_mor)
 ```
+
+
 
 Running the linear regression for each year in 2016 to 2023, we discovered education attainment, less high school to graduate education, and health care are the most significant. As a reminder, 2020 is not included due to COVID-19 disruptions. One thing we noticed was SNAP was significant pre-COVID and not significant post-COVID. (explain maybe why)
 
@@ -614,6 +628,8 @@ For total infant mortality, we analyzed education attainment is the most signifi
 We can conclude educational attainment is significant to both total fertility and infant mortality rate, followed by health insurance coverage.
 
 ## Education Gap
+
+
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # create two tables where edu_somcoll is grouped with _hs, _less_hs and another table with _bach and _grad grouped.
@@ -742,6 +758,8 @@ main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_
   summarize(across(everything(),mean)) |> arrange(edu_gap)
 ```
 
+
+
 The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. I think we should take the average? And talk about how D.C is an outlier.
 
 # Conclusion
@@ -819,3 +837,4 @@ Note: `fert_age1524` and below were created.
 | `hc_private` | Health Coverage: individuals with private insurance. |
 | `hc_public` | Health Coverage: individuals with public insurance. |
 | `hc_nohc` | Health Coverage: individuals with no health insurance. |
+
