@@ -662,7 +662,7 @@ In conclusion educational attainment is significant to both total fertility and 
 
 ## Education Gap
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show='hold'}
 # create two tables where edu_somcoll is grouped with _hs, _less_hs and another table with _bach and _grad grouped.
 # check states with higher educational attainment and their region, see how well it correlates with the regions in our initial EDA.
 edu_gap <- main_pop4 |> select(state,year,starts_with("edu_")) |> 
