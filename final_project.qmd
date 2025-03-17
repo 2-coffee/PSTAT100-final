@@ -16,7 +16,7 @@ library(forcats)
 library(qtl2)
 library(janitor)
 library(corrplot)
-library(magrittr)
+#library(magrittr)
 library(tidyverse)
 library(gt)
 library(knitr)
@@ -637,13 +637,23 @@ mortality_table <- data.frame(
   `Median Income` = c(NA, 1.879e-05, 2.392e-05, NA, 1.416e-05, 1.238e-05, 1.319e-05)
 )
 
+# fertility_kable <- fertility_table |>
+#   kable(caption = "Total Fertility Rate Analysis (Estimates)") |>
+#   kable_classic_2()
+
+# fertility_kable
+
+# mortality_kable <- mortality_table |>
+#   kable(caption = "Total Infant Mortality Rate Analysis (Estimates)") |>
+#   kable_classic_2()
+
+# mortality_kable
+
 fertility_table |>
-  kable(caption = "Total Fertility Rate Analysis (Estimates)") |>
-  kable_classic_2()
+  gt()
 
 mortality_table |>
-  kable(caption = "Total Infant Mortality Rate Analysis (Estimates)") |>
-  kable_classic_2()
+  gt()
 ```
 
 **Note: NA indicates not significant**
@@ -695,7 +705,7 @@ main_popEDU <- main_pop4 |> select(state,year,income_median,starts_with("hc_"),t
   select(region,total_fer,total_mort,edu_gap,everything()) |>
   arrange(edu_gap,region)
 
-main_popEDU |> # renaming for cleaner table
+top_gaps <- main_popEDU |> # renaming for cleaner table
   select(state, region, total_fer, total_mort, edu_gap, hc_private, hc_public, hc_nohc) |>
   mutate(
     state = case_when(
@@ -733,7 +743,9 @@ main_popEDU |> # renaming for cleaner table
   ) #|>
   #fmt_number(columns = income_median, suffixing = TRUE) 
 
-main_popEDU |> # renaming for cleaner tables
+top_gaps
+
+bottom_gaps <- main_popEDU |> # renaming for cleaner tables
   select(state, region, total_fer, total_mort, edu_gap, hc_private, hc_public, hc_nohc) |>
   mutate(
     state = case_when(
@@ -770,6 +782,8 @@ main_popEDU |> # renaming for cleaner tables
     hc_nohc = "No H. Ins."
   ) #|>
   #fmt_number(columns = income_median, suffixing = TRUE)
+
+bottom_gaps
 
 # merging to get region average for each variable of significance
 # main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |> 
