@@ -16,7 +16,7 @@ library(forcats)
 library(qtl2)
 library(janitor)
 library(corrplot)
-#library(magrittr)
+library(magrittr)
 library(tidyverse)
 library(gt)
 library(knitr)
@@ -368,7 +368,7 @@ To calculate total infant mortality rate, we divided total number of infant deat
 
 ## Initial Exploration of CDC Data
 
-```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 10, fig.height=6}
 inf_fer_rates  <- births_deaths |> select(state, year, bacode, infantMort_deaths_nhblack:region, -infantMort_deaths_con,-infantMort_deaths_noncon,
                         -infantMort_deaths_neo,-infantMort_deaths_total) 
 
@@ -509,31 +509,26 @@ print(loadings_plot)
 
 [Name for PC1:]{.underline} *"Education Attainment and Infant Mortality"*
 
-The variables that are most influential are `edu_bach`, `edu_grad`, `ed_less_hs`, `total_mort`, and `hc_private`. States with high PC1 scores indicate a relatively higher than average proportion of residents with private insurance, bachelors degree, and graduate degrees. While states with a lower PC1 value indicates a relatively higher than average proportion of residents who have less than a high school education and higher infant mortality rate.
+The variables that are most influential are `edu_bach`, `edu_grad`, `ed_less_hs`, `total_mort`, and `hc_private`. States with high PC1 scores indicate a relatively higher than average proportion of residents with private insurance, bachelors and graduate degrees. While states with a lower PC1 value indicates a relatively higher than average proportion of residents who have less than a high school education and higher infant mortality rate.
 
 [Name for PC2:]{.underline} *"Education and Income"*
 
-The variables that are most influential for PC2 are `edu_somecoll`, `income_median`, `SNAP`, `total_fer`, and `edu_grad`. States with a high PC2 value indicate higher proportions of residents who only attained some college education and has higher TFR, on the other hand, states with low PC2 values has a higher proportion graduate degrees, higher income median, and SNAP rate.
+The variables most influential for PC2 are `edu_somecoll`, `income_median`, `SNAP`, `total_fer`, and `edu_grad`. States with a high PC2 value tend to have a higher than average proportions of residents who have attained only some college education and have higher total fertility rates. However, states with low PC2 values have a higher than average proportion of individuals with graduate degrees, higher median income, and SNAP rate.
 
 [Name for PC3:]{.underline} *"Public/None Healthcare Coverage and High School Educated Population"*
 
-The variables that are most influential for PC3 are `hc_public`, `edu_hs`, `income_median`, and `hc_nohc`. Lower PC3 scores are associated with states that have greater public healthcare coverage and a larger proportion of the population with only a high school diploma. Conversely, high PC3 scores are linked to states with higher median incomes and a greater percentage of people without health insurance coverage.
+The variables that are most influential for PC3 are `hc_public`, `edu_hs`, `income_median`, and `hc_nohc`. Lower PC3 scores are associated with states that have a higher than average proportion of individuals with public healthcare coverage and those with only a high school degree. Conversely, high PC3 scores are linked to states with higher than average median incomes and a proportion of individuals with no health insurance.
 
 [Name for PC4:]{.underline} *"Private/None Healthcare Coverage and SNAP"*
 
-The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_private`, `edu_hs`, and `total_mort`. High PC4 scores explain states who has higher SNAP rates, proportion of private healthcare coverage, proportion of only high school diploma, and has higher infant mortality. Whereas a low PC4 indicates relatively higher proportion of citizens who has no healthcare coverage.
+The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_private`, `edu_hs`, and `total_mort`. State with high PC4 scores tend to have higher than average SNAP rates, a greater proportion of individuals with private healthcare coverage, a larger share of individuals with only a high school diploma, and higher infant mortality. Whereas, low PC4 scores indicate states with a relatively higher proportion of citizens without healthcare coverage.
 
 [Name for PC5:]{.underline} *"Education Attain and Fertility Rate"*
 
-The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. PC5 indicates that states with higher proportion of residents who only attained some college education explains lower TFR.
+The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. States with high PC5 scores indicates a higher proportion of residents who only attained some college education. In contrast, states with low PC5 scores have a higher than average proportion of individuals with only a high school degree or graduate degree and higher total fertility rate. 
 
-The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. PC5 indicates that states with higher proportion of residents who only attained some college education explains lower TFR.
-
-Overall, it seems that educational attainment explained a lot of TFR and infant mortality.
 
 In the scope of our project, we are going to pick the variables that are the most correlated to total fertility and infant mortality rates. These variables are education attainment, economic indicators, and health coverage. These variables align with social, economic, and healthcare conditions.
-
-The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. High PC5 indicates states with higher proportion of residents who only attained some college education. Lower PC5 scores indicate states who has a relatively higher proportion of high school graduates, graduate degrees, and higher TFR.
   
 Overall, it seems that educational attainment explained a lot of the variation in our data.
 
@@ -583,48 +578,48 @@ lr_state22 <- lr_state |>
 lr_state23 <- lr_state |>
   filter(year == 2023)
 
-print("2016")
+# print("2016")
 lin_reg16 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
-summary(lin_reg16)
-print("2017")
+# summary(lin_reg16)
+# print("2017")
 lin_reg17 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
-summary(lin_reg17)
-print("2018")
+# summary(lin_reg17)
+# print("2018")
 lin_reg18 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
-summary(lin_reg18)
-print("2019")
+# summary(lin_reg18)
+# print("2019")
 lin_reg19 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
-summary(lin_reg19)
-print("2021")
+# summary(lin_reg19)
+# print("2021")
 lin_reg21 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
-summary(lin_reg21)
-print("2022")
+# summary(lin_reg21)
+# print("2022")
 lin_reg22 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
-summary(lin_reg22)
-print("2023")
+# summary(lin_reg22)
+# print("2023")
 lin_reg23 <- lm(total_fer ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
-summary(lin_reg23)
-print("2016")
+# summary(lin_reg23)
+# print("2016")
 lin_reg16_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state16)
-summary(lin_reg16_mor)
-print("2017")
+# summary(lin_reg16_mor)
+# print("2017")
 lin_reg17_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state17)
-summary(lin_reg17_mor)
-print("2018")
+# summary(lin_reg17_mor)
+# print("2018")
 lin_reg18_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state18)
-summary(lin_reg18_mor)
-print("2019")
+# summary(lin_reg18_mor)
+# print("2019")
 lin_reg19_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state19)
-summary(lin_reg19_mor)
-print("2021")
+# summary(lin_reg19_mor)
+# print("2021")
 lin_reg21_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state21)
-summary(lin_reg21_mor)
-print("2022")
+# summary(lin_reg21_mor)
+# print("2022")
 lin_reg22_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state22)
-summary(lin_reg22_mor)
-print("2023")
+# summary(lin_reg22_mor)
+# print("2023")
 lin_reg23_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach +edu_grad + income_median+ SNAP + hc_private + hc_public + hc_nohc, data = lr_state23)
-summary(lin_reg23_mor)
+# summary(lin_reg23_mor)
 ```
 
 ```{r}
@@ -651,6 +646,7 @@ mortality_table |>
   kable_classic_2()
 ```
 
+**Note: NA indicates not significant**
 
 Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate, revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
 
@@ -661,6 +657,8 @@ For total infant mortality rate, a similar pattern was observed, with bachelor's
 Income median was also statistically significant for total infant mortality, but is approximately 0, making no impact on infant mortality rates. 
 
 In conclusion educational attainment is significant to both total fertility and infant mortality rate, with health insurance also playing a role in fertility rates.
+
+
 
 ## Education Gap
 
@@ -817,6 +815,8 @@ main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_
 
 The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. I think we should take the average? And talk about how D.C is an outlier.
 
+As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total mortality rates. While we did find educational attainment to be statistically significant in total fertility rate, it is inconclusive at the region and state level.
+
 # Conclusion
 
 -   fertility rate vs infant mortality rate
@@ -825,7 +825,9 @@ The education gap is calculated by adding the proportions of less than high scho
 -   linear regression
 -   education gap
 -   problems
-    -   data by ethnicity, As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total mortality rates. While we did find educational attainment to be statistically significant in total fertility rate, it is inconclusive at the region and state level.\
+    -   data by ethnicity, 
+    
+    Fertility and infant mortality rate places a huge role in population growth and indicating a country's overall health, reflecting the social, economic, and healthcare conditions. As we proceed into the future, we are questioning how major conflicts are going to impact our population. Through this project, we went through different methods to explore fertility and infant mortality rates across U.S. states. We identified the different trends within ethnicities for U.S. regions and found Non-Hispanic White populations had the highest variation in infant mortality among the other ethnic groups. In addition, age groups, marital status, economic indicators, and health coverage are correlated with total fertility and infant mortality rates. We identified education attainment and healthcare coverage as the most significant patterns using PCA and tested their significance with linear regression for both TFR and IMR. Using linear regression, we saw the change of estimates of significant predictiors across years. Seeing the importance of educational attainment, we examined the education gaps with the highest and lowest differences in higher education (graduate and above) and lower education (bachelors and below). We used the table to examine other trends in the different categories of healthcare coverage. (Add Averages Per Region)
         Throughout our analysis, we encountered several instances where data for ethnicities, other than Non-Hispanic White, were either omitted or replaced with zeroes. This posed significant challenges in our analysis, as our techniques indicated no statistical significance or produced missing values (NAs). In the future, we would like to obtain and filter data by counties and ethnicities to better assess maternal and infant health disparities in the United States.
 
 # Sources
