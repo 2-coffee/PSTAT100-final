@@ -277,8 +277,7 @@ How do educational, and regional factors influence birth rates and infant mortal
 
 As politicians continue to attack the Department of Education, propose cuts on SNAP benefits, and limit access to reproductive healthcare, we are wondering if this will affect future population growth.
 
--explain what a satisfactory answer might look like:
-A satisfactory answer is one in which we find variables that can explain, or at least influence, fertility and infant moratility data for each state and region.
+A satisfactory answer is one in which we find variables that can explain, or at least influence, fertility and infant mortality data for  state and region levels.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
@@ -639,11 +638,11 @@ mortality_table <- data.frame(
 )
 
 fertility_table |>
-  kable(caption = "Total Fertility Rate Analysis") |>
+  kable(caption = "Total Fertility Rate Analysis (Estimates)") |>
   kable_classic_2()
 
 mortality_table |>
-  kable(caption = "Total Infant Mortality Rate Analysis") |>
+  kable(caption = "Total Infant Mortality Rate Analysis (Estimates)") |>
   kable_classic_2()
 ```
 
@@ -773,48 +772,44 @@ main_popEDU |> # renaming for cleaner tables
   #fmt_number(columns = income_median, suffixing = TRUE)
 
 # merging to get region average for each variable of significance
-main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |> 
-  left_join(edu_gap) |> left_join(hc_gap) |>
-  group_by(state,year) |>
-  summarize(across(everything(),mean)) |> ungroup() |>
-  mutate(region = case_when(
-           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
-           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
-           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
-           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
-           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
-           TRUE ~ "missing"
-         )) |> select(-state) |>
-  group_by(region,year)  |>
-  summarize(across(everything(),mean)) |>
-  select(region, year, total_fer,total_mort,edu_gap,hc_gap) |>
-  arrange(region,edu_gap) |> ungroup() |> select(-year) |>
-  group_by(region) |>
-  summarize(across(everything(),mean)) |> arrange(edu_gap) |>
-  mutate(
-    region = case_when(
-      region == "Northeast" ~ "NE",
-      region == "Southeast" ~ "SE",
-      region == "West" ~ "W",
-      region == "Northwest" ~ "NW",
-      region == "Southwest" ~ "SW",
-      region == "Midwest" ~ "MW",
-    TRUE ~ region
-    )) |>
-  gt() |>
-  tab_header(
-    title = "Averages Per Region"
-  ) |>
-  cols_label(
-    total_fer = "TFR",
-    total_mort = "TIMR",
-    edu_gap = "EDU Gap",
-    hc_gap = "Health Care Gap"
-  )
-
-      
-
-
+# main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |> 
+#   left_join(edu_gap) |> left_join(hc_gap) |>
+#   group_by(state,year) |>
+#   summarize(across(everything(),mean)) |> ungroup() |>
+#   mutate(region = case_when(
+#            state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+#            state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+#            state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+#            state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+#            state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+#            TRUE ~ "missing"
+#          )) |> select(-state) |>
+#   group_by(region,year)  |>
+#   summarize(across(everything(),mean)) |>
+#   select(region, year, total_fer,total_mort,edu_gap,hc_gap) |>
+#   arrange(region,edu_gap) |> ungroup() |> select(-year) |>
+#   group_by(region) |>
+#   summarize(across(everything(),mean)) |> arrange(edu_gap) |>
+#   mutate(
+#     region = case_when(
+#       region == "Northeast" ~ "NE",
+#       region == "Southeast" ~ "SE",
+#       region == "West" ~ "W",
+#       region == "Northwest" ~ "NW",
+#       region == "Southwest" ~ "SW",
+#       region == "Midwest" ~ "MW",
+#     TRUE ~ region
+#     )) |>
+#   gt() |>
+#   tab_header(
+#     title = "Averages Per Region"
+#   ) |>
+#   cols_label(
+#     total_fer = "TFR",
+#     total_mort = "TIMR",
+#     edu_gap = "EDU Gap",
+#     hc_gap = "Health Care Gap"
+#   )
 ```
 
 The education gap is calculated by adding the proportions of less than high school, high school, and some college, then subtracting this from the proportion of bachelors and graduate school summed. I think we should take the average? And talk about how D.C is an outlier.
@@ -823,16 +818,14 @@ As observed in our initial exploration, states in the Southeast region, which ha
 
 # Conclusion
 
--   fertility rate vs infant mortality rate
--   correlation matrix
--   pca
--   linear regression
--   education gap
--   problems
-    -   data by ethnicity, 
-    
-    Fertility and infant mortality rate places a huge role in population growth and indicating a country's overall health, reflecting the social, economic, and healthcare conditions. As we proceed into the future, we are questioning how major conflicts are going to impact our population. Through this project, we went through different methods to explore fertility and infant mortality rates across U.S. states. We identified the different trends within ethnicities for U.S. regions and found Non-Hispanic White populations had the highest variation in infant mortality among the other ethnic groups. In addition, age groups, marital status, economic indicators, and health coverage are correlated with total fertility and infant mortality rates. We identified education attainment and healthcare coverage as the most significant patterns using PCA and tested their significance with linear regression for both TFR and IMR. Using linear regression, we saw the change of estimates of significant predictiors across years. Seeing the importance of educational attainment, we examined the education gaps with the highest and lowest differences in higher education (graduate and above) and lower education (bachelors and below). We used the table to examine other trends in the different categories of healthcare coverage. (Add Averages Per Region)
-        Throughout our analysis, we encountered several instances where data for ethnicities, other than Non-Hispanic White, were either omitted or replaced with zeroes. This posed significant challenges in our analysis, as our techniques indicated no statistical significance or produced missing values (NAs). In the future, we would like to obtain and filter data by counties and ethnicities to better assess maternal and infant health disparities in the United States. It would also be very interesting to see if voting patterns correlated with educational gap for each state and their counties.
+Fertility and infant mortality rates play a huge role in population growth and are key indicators of a country's overall health, reflecting the social, economic, and healthcare conditions. As we move toward the future, we question how major conflicts will impact our population. In this project, we explored fertility and infant mortality rates across U.S. states using various methods.
+
+We identified trends across ethnic groups and found that Non-Hispanic White populations had the highest variation in infant mortality. In addition, we analyzed the relationships between total fertility (TFR) and infant mortality rates (IMR) with predictors such as age groups, marital status, economic indicators, and health coverage. PCA emphasized education attainment and healthcare coverage as the most significant predictors, which we tested using linear regression for both TFR and IMR. Using linear regression, it revealed the change of estimates of significant predictors over time. Given the importance of educational attainment, we examined the education gaps between higher education (graduate and above) and lower education (bachelors and below). We also used a table to examine trends in healthcare coverage categories.
+
+Throughout our analysis, we encountered challenges with missing or omitted data, particularly for ethnic groups other than Non-Hispanic White. This resulted in occurrences where our techniques failed to identify statistical significance or produced missing values (NAs). Additionally, attempts to run state-level linear regression per year produced NA values due to having more predictors than observations. 
+
+For future research, we would like to obtain county-level data to better assess maternal and infant health disparities in the United States. It would also be very interesting to see if voting patterns are correlated with educational gaps for each state and county levels.
+  
 
 # Sources
 
