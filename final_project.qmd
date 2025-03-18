@@ -678,6 +678,7 @@ fertility_table |>
   ) |> 
   tab_caption("Total Fertility Rate Analysis (Estimates)")
 ```
+
 ```{r  mortality_table, echo=FALSE, message=FALSE, warning=FALSE}
 #creating table with gt
 mortality_table |>
@@ -690,7 +691,7 @@ mortality_table |>
 
 **Note: NA indicates not significant**
 
-Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate **Figure \@ref(fertility_table)**, revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
+Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate  \\@ref(fig:fertility_table), revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
 
 Public health insurance also had a significant negative association with fertility rates from 2016 to 2021. States with higher proportions of individuals with public health insurance tend to have lower fertility rates. Public health's strongest negative effect occurred in 2016 and 2017, and dropped significantly in 2022, indicating it might be more muted over the years.
 
