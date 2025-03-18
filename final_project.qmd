@@ -16,7 +16,7 @@ library(forcats)
 library(qtl2)
 library(janitor)
 library(corrplot)
-#library(magrittr)
+library(magrittr)
 library(tidyverse)
 library(gt)
 library(knitr)
@@ -655,7 +655,9 @@ mortality_table <- data.frame(
 #   kable_classic_2()
 
 # mortality_kable
+```
 
+```{r}
 #creating table with gt
 fertility_table |>
   gt() |>
@@ -671,6 +673,7 @@ mortality_table |>
   )
 ```
 
+
 **Note: NA indicates not significant**
 
 Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate, revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
@@ -684,8 +687,6 @@ Income median was also statistically significant for total infant mortality, but
 In conclusion educational attainment is significant to both total fertility and infant mortality rate, with health insurance also playing a role in fertility rates.
 
 ## Education Gap
-
-As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher than average total mortality rates per 1,000 live births. In contrast, states in the Northeast, which have a higher proportion of highly educated residents (despite the educational gap being negative), tend to show lower than average total mortality rates. While educational attainment was found to be a statistically significant predictor of total fertility rate, its effect remains inconclusive when analyzed at the region and state levels.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show='hold'}
 # create two tables where edu_somcoll is grouped with _hs, _less_hs and another table with _bach and _grad grouped.
@@ -796,12 +797,6 @@ bottom_gaps <- main_popEDU |> # renaming for cleaner tables
   ) #|>
   #fmt_number(columns = income_median, suffixing = TRUE)
 
-#printing top gaps
-top_gaps
-
-#printing bottom gaps
-bottom_gaps
-
 # merging to get region average for each variable of significance
 # main_pop4 |> select(state,year,income_median,starts_with("hc_"),total_fer,total_mort) |> 
 #   left_join(edu_gap) |> left_join(hc_gap) |>
@@ -842,6 +837,17 @@ bottom_gaps
 #     hc_gap = "Health Care Gap"
 #   )
 ```
+
+```{r}
+#printing top gaps
+top_gaps
+
+#printing bottom gaps
+bottom_gaps
+```
+
+
+As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher than average total mortality rates per 1,000 live births. In contrast, states in the Northeast, which have a higher proportion of highly educated residents (despite the educational gap being negative), tend to show lower than average total mortality rates. While educational attainment was found to be a statistically significant predictor of total fertility rate, its effect remains inconclusive when analyzed at the region and state levels.
 
 # Conclusion
 
