@@ -20,7 +20,7 @@ library(forcats)
 library(qtl2)
 library(janitor)
 library(corrplot)
-library(magrittr)
+#library(magrittr)
 library(tidyverse)
 library(gt)
 library(knitr)
@@ -146,6 +146,7 @@ births_deaths <- fertility_mortality |>
            TRUE ~ "missing"
          ))
 
+#joining median_income dataset to births_deaths
 births_deaths <- births_deaths |> 
   left_join(median_income, by = c("state", "year"))
 
@@ -167,6 +168,7 @@ fertility_rates <- fertility_mortality |> select(year,matches("births_age[0-9]")
 fertility_rates <- fertility_rates |> # selecting columns
   select(year, tfr, gen_fr )
 
+#joining fertility_rates to births_deaths
 births_deaths <- births_deaths |> 
   left_join(fertility_rates, by = "year")
 ```
@@ -194,6 +196,7 @@ infantMort_eth <- births_deaths1 |>
   select(state,year,Minority_mort,Nonminority_mort,InfantMort_GAP) |>
   ungroup() 
 
+#selecting variables
 infantMort_eth1 <- infantMort_eth |> select(state,year,InfantMort_GAP)
 
 # total infant mortality
@@ -221,6 +224,7 @@ TFR_GAP <- fertility_mortality |>
          ) |>
   select(year,Minority_fer,Nonminority_fer,TFR_gap) |> ungroup()
 
+#selecting variables and removing 2020
 TFR_GAP1 <- TFR_GAP |> ungroup() |> # for merging with Census data
   select(state,year,TFR_gap) |>
   filter(year!=2020)
@@ -244,6 +248,7 @@ total_fertilityUS <- fertility_mortality |> select(year,state,matches("births_ag
   select(year,starts_with("fert_age")) |>
   mutate(total_fer = (fert_age1524+fert_age2534+fert_age3544)*10) 
 
+#calculating total_fer
 TFR_USstyr <- total_fertilityUS |> select(state,year,total_fer) |>
   mutate(total_fer = total_fer/1000) |>
   ungroup()
@@ -260,7 +265,7 @@ Fertility rate represents the total number of children a woman has during her re
 
 The Population Demographics dataset provides data on the years 2016 to 2023, providing information on total population, as well as the distribution of sex and age, marital status, educational attainment, SNAP participation, household median income, and health insurance coverage by ethnicity. These variables represent key social, economic, and healthcare conditions across U.S. states.
 
-Ryabov (2015) found that the relationship between Total Fertility Rate (TFR) and various human development indicators "a negative association between selected human development indicators and TFR exists in suburban and rural counties, as well as in the United States as a whole." However, the analysis was inconclusive for urban counties; some indicators such as median income were positively associated with TFR, whereas higher educational attainment negatively associated with TFR.
+Ryabov (2015) found that the relationship between Total Fertility Rate (TFR) and various human development indicators is "a negative association," which, "exists in suburban and rural counties, as well as in the United States as a whole." However, the analysis was inconclusive for urban counties; some indicators such as median income were positively associated with TFR, whereas higher educational attainment negatively associated with TFR.
 
 In 2019, Hamilton et al. reported a TFR of 1,705 expected births per 1,000 women for all women aged 15–49 in the U.S. The TFR decreased as the level of education increased, starting from women with a 12th-grade education or less through those with an associate’s or bachelor’s degree. However, the TFR began to rise again among women with a bachelor’s degree and continued to increase for those holding a doctorate or professional degree.
 
@@ -472,7 +477,7 @@ main_pop4 |>
 
 -   `total_mort` and `no_hc`: States with a higher proportion of individuals with no health coverage tend to have a higher total mortality rate, suggesting lack of access to healthcare such as prenatal care.
 
--   `total_mort` and `edu_bach`/`edu_grad`: There are moderate negative correlations between total infant mortality rates and higher education levels, suggesting states with a greater population of individuals with a graduate degree or higher tend to experience lower mortality rates, potentially due to better access to resources.
+-   `total_mort` and `edu_bach`/`edu_grad`: There are moderate negative correlations between total infant mortality rates and higher education levels, suggesting states with a greater population of individuals with a bachelor degree or higher tend to experience lower mortality rates, potentially due to better access to resources.
 
 -   `total_fer`/`total_mort` and `pop_age517`: In both total fertility and mortality rates, states with a higher proportion of individuals aged between 5 and 17 (particularly those aged 15 to 17) tend to have slightly higher rates.
 
@@ -482,11 +487,11 @@ Given the presence of correlated variables, we will apply Principal Component An
 
 We are going to identify the most significant patterns in the data while minimizing information loss.
 
-To determine the optimal number of components, we plotted the proportion of variance explained and the cumulative variance. From the visuals, we identified that five components capture about 80% of the total variance.
+To determine the optimal number of components, we plotted the proportion of variance explained and the cumulative variance (under Number of Components). From the visuals, we identified that five components capture about 80% of the total variance.
 
 ## Examining Loadings
 
-Next, we will identify the variables that contribute the most to each principal component by examing their positive and negative weights. This will help us discover patterns.
+Next, we will identify the variables that contribute the most to each principal component by examining their positive and negative weights. This will help us discover patterns.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 no_state <- main_pop4 |>
@@ -521,11 +526,11 @@ print(loadings_plot)
 
 [Name for PC1:]{.underline} *"Education Attainment and Infant Mortality"*
 
-The variables that are most influential are `edu_bach`, `edu_grad`, `ed_less_hs`, `total_mort`, and `hc_private`. States with high PC1 scores indicate a relatively higher than average proportion of residents with private insurance, bachelors and graduate degrees. While states with a lower PC1 value indicates a relatively higher than average proportion of residents who have less than a high school education and higher infant mortality rate.
+The variables that are most influential are `edu_bach`, `edu_grad`, `edu_less_hs`, `total_mort`, and `hc_private`. States with high PC1 scores indicate a relatively higher than average proportion of residents with private insurance, bachelors and graduate degrees. While states with lower PC1 values indicate a relatively higher than average proportion of residents who have less than a high school education and higher infant mortality rate.
 
 [Name for PC2:]{.underline} *"Education and Income"*
 
-The variables most influential for PC2 are `edu_somecoll`, `income_median`, `SNAP`, `total_fer`, and `edu_grad`. States with a high PC2 value tend to have a higher than average proportions of residents who have attained only some college education and have higher total fertility rates. However, states with low PC2 values have a higher than average proportion of individuals with graduate degrees, higher median income, and SNAP rate.
+The variables most influential for PC2 are `edu_somecoll`, `income_median`, `SNAP`, `total_fer`, and `edu_grad`. States with high PC2 values tend to have a higher than average proportion of residents who have attained only some college education and have higher total fertility rates. However, states with low PC2 values have a higher than average proportion of individuals with graduate degrees, higher median income, and SNAP rate.
 
 [Name for PC3:]{.underline} *"Public/None Healthcare Coverage and High School Educated Population"*
 
@@ -533,11 +538,11 @@ The variables that are most influential for PC3 are `hc_public`, `edu_hs`, `inco
 
 [Name for PC4:]{.underline} *"Private/None Healthcare Coverage and SNAP"*
 
-The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_private`, `edu_hs`, and `total_mort`. State with high PC4 scores tend to have higher than average SNAP rates, a greater proportion of individuals with private healthcare coverage, a larger share of individuals with only a high school diploma, and higher infant mortality. Whereas, low PC4 scores indicate states with a relatively higher proportion of citizens without healthcare coverage.
+The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_private`, `edu_hs`, and `total_mort`. State with high PC4 scores tend to have higher than average SNAP rates, a greater proportion of individuals with private healthcare coverage, a larger share of individuals with only a high school diploma, and higher infant mortality rate. Whereas, low PC4 scores indicate states with a relatively higher proportion of citizens without healthcare coverage.
 
 [Name for PC5:]{.underline} *"Education Attain and Fertility Rate"*
 
-The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. States with high PC5 scores indicates a higher proportion of residents who only attained some college education. In contrast, states with low PC5 scores have a higher than average proportion of individuals with only a high school degree or graduate degree and higher total fertility rate.
+The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. States with high PC5 scores indicate a higher proportion of residents who only attained some college education. In contrast, states with low PC5 scores have a higher than average proportion of individuals with only a high school degree or graduate degree and higher total fertility rate.
 
 In the scope of our project, we are going to pick the variables that are the most correlated to total fertility and infant mortality rates. These variables are education attainment, economic indicators, and health coverage. These variables align with social, economic, and healthcare conditions.
 
@@ -669,7 +674,7 @@ mortality_table <- data.frame(
 # mortality_kable
 ```
 
-```{r fertility_table, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="TFR Analysis (Estimates)"}
+```{r fertility_table, echo=FALSE, message=FALSE, warning=FALSE}
 #creating table with gt
 fertility_table |>
   gt() |>
@@ -688,18 +693,13 @@ mortality_table |>
   )
 ```
 
-
 **Note: NA indicates not significant**
 
-
-Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate  \\@ref(fig:fertility_table), revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
-
-Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate [**Figure: Total Fertility Rate Analysis (Estimates)**], revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
-
+Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate \[**Figure: Total Fertility Rate Analysis (Estimates)**\], revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
 
 Public health insurance also had a significant negative association with fertility rates from 2016 to 2021. States with higher proportions of individuals with public health insurance tend to have lower fertility rates. Public health's strongest negative effect occurred in 2016 and 2017, and dropped significantly in 2022, indicating it might be more muted over the years.
 
-For total infant mortality rate [**Figure: Total Infant Mortality Rate Analysis (Estimates)**], a similar pattern was observed, with bachelor's showing a consistently negative significance from 2016 to 2023. Graduate degree had a significant negative effect between 2018 to 2022. The strongest negative effect for bachelor's education was in 2016, and gradually decreases, reaching its lowest effect in 2023. However for graduate's education, the strongest negative effect occurred in 2022.
+For total infant mortality rate \[**Figure: Total Infant Mortality Rate Analysis (Estimates)**\], a similar pattern was observed, with bachelor's showing a consistently negative significance from 2016 to 2023. Graduate degree had a significant negative effect between 2018 to 2022. The strongest negative effect for bachelor's education was in 2016, and gradually decreases, reaching its lowest effect in 2023. However for graduate's education, the strongest negative effect occurred in 2022.
 
 Income median was also statistically significant for total infant mortality, but is approximately 0, making no impact on infant mortality rates.
 
@@ -867,18 +867,17 @@ top_gaps
 bottom_gaps
 ```
 
-
-As observed in our initial exploration, states in the Southeast region [**Figure: Highest Educational Attainment Gap**], which have a lower proportion of highly educated residents, tend to exhibit higher than average total mortality rates per 1,000 live births. In contrast, states in the Northeast [**Figre: Lowest Educational Attainment Gap**], which have a higher proportion of highly educated residents (despite the educational gap being negative), tend to show lower than average total mortality rates. While educational attainment was found to be a statistically significant predictor of total fertility rate, its effect remains inconclusive when analyzed at the region and state levels.
+As observed in our initial exploration, states in the Southeast region \[**Figure: Highest Educational Attainment Gap**\], which have a lower proportion of highly educated residents, tend to exhibit higher than average total infant mortality rates per 1,000 live births. In contrast, states in the Northeast \[**Figure: Lowest Educational Attainment Gap**\], which have a higher proportion of highly educated residents (despite the educational gap being negative), tend to show lower than average total infant mortality rates. While educational attainment was found to be a statistically significant predictor of total fertility rate, its effect remains inconclusive when analyzed at the region and state levels.
 
 # Conclusion
 
-Fertility and infant mortality rates play a huge role in population growth and are key indicators of a country's overall health, reflecting the social, economic, and healthcare conditions. As we move toward the future, we question how major conflicts will impact our population. In this project, we explored fertility and infant mortality rates across U.S. states using various methods.
+Fertility and infant mortality rates play a huge role in population growth and are key indicators of a country's overall health, reflecting the social, economic, and healthcare conditions. As we move toward the future, we question how major cutbacks in social and health services will impact our population. In this project, we explored fertility and infant mortality rates across U.S. states using various methods.
 
-We identified trends across ethnic groups and found that Non-Hispanic White populations had the highest variation in infant mortality. The South region had a higher proportion of individuals with a high school degree or less, the West led in some college education, and the Northeast region had the highest proportion of bachelor's and graduate degree holders. In addition, we analyzed the relationships between total fertility (TFR) and infant mortality rates (IMR) with predictors such as age groups, marital status, economic indicators, and health coverage. PCA emphasized education attainment and healthcare coverage as the most significant predictors, which we tested using linear regression for both TFR and IMR. Using linear regression, it revealed the change of estimates of significant predictors over time. Given the importance of educational attainment, we examined the education gaps between higher education (graduate and above) and lower education (bachelors and below). We also used a table to examine trends in healthcare coverage categories.
+We identified trends across ethnic groups and found that Non-Hispanic White populations had the highest variation in infant mortality rates. The South region had a higher proportion of individuals with a high school degree or less, the West led in some college education, and the Northeast region had the highest proportion of bachelor's and graduate degree holders. In addition, we analyzed the relationships between total fertility (TFR) and infant mortality rates (IMR) with predictors such as age groups, marital status, economic indicators, and healthcare coverage. PCA emphasized educational attainment and healthcare coverage as the most significant predictors, which we tested using linear regression for both TFR and IMR. Using linear regression revealed the change of estimates of significant predictors over time. Given the importance of educational attainment, we examined the education gaps between higher education (graduate and above) and lower education (bachelors and below). We also used the table to examine trends in healthcare coverage categories.
 
 Throughout our analysis, we encountered challenges with missing or omitted data, particularly for ethnic groups other than Non-Hispanic White. This resulted in occurrences where our techniques failed to identify statistical significance or produced missing values (NAs). Additionally, attempts to run state-level linear regression per year produced NA values due to having more predictors than observations.
 
-For future research, we would like to obtain county-level data to better assess maternal and infant health disparities in the United States. It would also be very interesting to see if voting patterns are correlated with educational gaps for each state and county levels.
+For future research, we would like to obtain county-level data to better assess maternal and infant health disparities in the United States. It would also be captivating to see if voting patterns are correlated with educational gaps for state and county levels.
 
 # Sources
 
@@ -925,7 +924,7 @@ Note: `fert_age1524` and below were created.
 ## Census Dataset
 
 | Variable Name | Meaning (Proportional Total Population by State and Year) |
-|------------------------|-----------------------------------------------|
+|-------------------------|-----------------------------------------------|
 | `pop_age517` | Population aged 5-17 (women age 5-54 population). |
 | `pop_age2534` | Population aged 25-34 (women age 5-54 population). |
 | `pop_age3544` | Population aged 35-44 (women age 5-54 population). |
