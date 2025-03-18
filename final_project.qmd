@@ -5,6 +5,10 @@ format: pdf
 execute:
   echo: false
 html-math-method: mathjax
+output:
+  bookdown::pdf_document2:
+    fig_caption: yes
+    number_sections: yes
 ---
 
 ```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
@@ -20,6 +24,8 @@ library(magrittr)
 library(tidyverse)
 library(gt)
 library(knitr)
+
+knitr::opts_chunk$set(fig_caption = TRUE)
 
 fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv") #fertility data
 
@@ -535,26 +541,32 @@ The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `t
 
 In the scope of our project, we are going to pick the variables that are the most correlated to total fertility and infant mortality rates. These variables are education attainment, economic indicators, and health coverage. These variables align with social, economic, and healthcare conditions.
 
-Overall, it seems that educational attainment explained a lot of the variation in our data.
+Overall, it seems that educational attainment, followed by healthcare coverage, explained a lot of the variation in our data.
 
 # Linear Regression
 
 In this part, we'll use linear regression to see which predictors are significant for each year. We are going to regress total fertility and total infant mortality rates on education attainment, economic indicators, and health coverage.
 
 $$
+\begin{aligned}
 \text{total\_fer} = \beta_0 + 
 \underbrace{\beta_1 \text{less hs}_i + \cdots + \beta_5 \text{grad}_i}_{\text{education attainment}} + 
-\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} \\ + 
+\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} \\
++ 
 \underbrace{\beta_8 \text{private}_i + \cdots + \beta_{10} \text{no coverage}_i}_{\text{health coverage}}  + 
  \epsilon_i
+ \end{aligned}
 $$
 
 $$
+\begin{aligned}
 \text{total\_mort} = \beta_0 + 
 \underbrace{\beta_1 \text{less hs}_i + \cdots + \beta_5 \text{grad}_i}_{\text{education attainment}} + 
-\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} \\ + 
+\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} \\ 
++ 
 \underbrace{\beta_8 \text{private}_i + \cdots + \beta_{10} \text{no coverage}_i}_{\text{health coverage}} + 
  \epsilon_i
+\end{aligned}
 $$
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -657,14 +669,16 @@ mortality_table <- data.frame(
 # mortality_kable
 ```
 
-```{r}
+```{r fertility_table, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="TFR Analysis (Estimates)"}
 #creating table with gt
 fertility_table |>
   gt() |>
   tab_header(
     title = "Total Fertility Rate Analysis (Estimates)"
-  )
-
+  ) |> 
+  tab_caption("Total Fertility Rate Analysis (Estimates)")
+```
+```{r  mortality_table, echo=FALSE, message=FALSE, warning=FALSE}
 #creating table with gt
 mortality_table |>
   gt() |>
@@ -676,11 +690,11 @@ mortality_table |>
 
 **Note: NA indicates not significant**
 
-Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate, revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
+Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate **Figure \@ref(fertility_table)**, revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
 
 Public health insurance also had a significant negative association with fertility rates from 2016 to 2021. States with higher proportions of individuals with public health insurance tend to have lower fertility rates. Public health's strongest negative effect occurred in 2016 and 2017, and dropped significantly in 2022, indicating it might be more muted over the years.
 
-For total infant mortality rate, a similar pattern was observed, with bachelor's showing a consistently negative significance from 2016 to 2023. Graduate degree had a significant negative effect between 2018 to 2022. The strongest negative effect for bachelor's education was in 2016, and gradually decreases, reaching its lowest effect in 2023. However for graduate's education, the strongest negative effect occurred in 2022.
+For total infant mortality rate **Table \@ref(mortality_table)**, a similar pattern was observed, with bachelor's showing a consistently negative significance from 2016 to 2023. Graduate degree had a significant negative effect between 2018 to 2022. The strongest negative effect for bachelor's education was in 2016, and gradually decreases, reaching its lowest effect in 2023. However for graduate's education, the strongest negative effect occurred in 2022.
 
 Income median was also statistically significant for total infant mortality, but is approximately 0, making no impact on infant mortality rates.
 
@@ -838,16 +852,18 @@ bottom_gaps <- main_popEDU |> # renaming for cleaner tables
 #   )
 ```
 
-```{r}
+```{r top_gaps, echo=FALSE, message=FALSE, warning=FALSE, fig.show='hold'}
 #printing top gaps
 top_gaps
+```
 
+```{r bottom_gaps, echo=FALSE, message=FALSE, warning=FALSE, fig.show='hold'}
 #printing bottom gaps
 bottom_gaps
 ```
 
 
-As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher than average total mortality rates per 1,000 live births. In contrast, states in the Northeast, which have a higher proportion of highly educated residents (despite the educational gap being negative), tend to show lower than average total mortality rates. While educational attainment was found to be a statistically significant predictor of total fertility rate, its effect remains inconclusive when analyzed at the region and state levels.
+As observed in our initial exploration, states in the Southeast region **Table \@ref(top_gaps)**, which have a lower proportion of highly educated residents, tend to exhibit higher than average total mortality rates per 1,000 live births. In contrast, states in the Northeast **Table \@ref(bottom_gaps)**, which have a higher proportion of highly educated residents (despite the educational gap being negative), tend to show lower than average total mortality rates. While educational attainment was found to be a statistically significant predictor of total fertility rate, its effect remains inconclusive when analyzed at the region and state levels.
 
 # Conclusion
 
