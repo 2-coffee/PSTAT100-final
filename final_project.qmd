@@ -20,7 +20,6 @@ library(corrplot)
 library(tidyverse)
 library(gt)
 library(knitr)
-library(kableExtra)
 
 fertility_data <- read.csv("~/Desktop/UCSB/PSTAT100-final/fertility_data.csv") #fertility data
 
@@ -39,33 +38,33 @@ pop_2023 <- read.csv("~/Desktop/pop_profiles/pop_profile_2023.csv")
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #adding months January to June
-fertility_update <- fertility_data %>%
-  filter(bmcode %in% c(1, 2, 3)) %>%  
-  group_by(state, year) %>%  
-  summarise(across(births_age1524:pop_age3544, ~sum(., na.rm = TRUE))) %>%  
+fertility_update <- fertility_data |>
+  filter(bmcode %in% c(1, 2, 3)) |>  
+  group_by(state, year) |>  
+  summarise(across(births_age1524:pop_age3544, ~sum(., na.rm = TRUE))) |>  
   mutate(bacode =1,
-         across(pop_total:pop_age3544, ~./3)) %>% 
+         across(pop_total:pop_age3544, ~./3)) |>
   ungroup() 
 
 #adding months July to December together
-fertility_update2 <- fertility_data %>%
-  filter(bmcode %in% c(4, 5, 6)) %>%  
-  group_by(state, year) %>%  
-  summarise(across(births_age1524:pop_age3544, ~sum(., na.rm = TRUE))) %>%  
+fertility_update2 <- fertility_data |>
+  filter(bmcode %in% c(4, 5, 6)) |> 
+  group_by(state, year) |> 
+  summarise(across(births_age1524:pop_age3544, ~sum(., na.rm = TRUE))) |> 
   mutate(bacode = 2,
-         across(pop_total:pop_age3544, ~./3)) %>% 
+         across(pop_total:pop_age3544, ~./3)) |> 
   ungroup()
 
 #merging fertility_update and fertility_update2
 fertility_merged <- bind_rows(fertility_update, fertility_update2)
 
 #removing year 2024 due to no data
-fertility_merged <- fertility_merged %>% 
+fertility_merged <- fertility_merged |>
   filter(!year == 2024)
 
 #creating proportions and fertility rates
-fertility_merged2 <- fertility_merged %>% 
-  select(state:bacode) %>% 
+fertility_merged2 <- fertility_merged |> 
+  select(state:bacode) |> 
    mutate(
   prop_births_1524 = births_age1524 / births_total,
          prop_births_2534 = births_age2534 / births_total,
@@ -128,8 +127,8 @@ fertility_mortality <- fertility_merged2 |>
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-
-births_deaths <- fertility_mortality %>% 
+#creating births_deaths and region
+births_deaths <- fertility_mortality |>
   select(state, year, bacode, births_age1524:births_nonmedicaid, fer_rate_1524:repro_pop, exposed_infdeaths, deaths_nhblack:deaths_total, infant_births_total:infantMort_deaths_total, fer_rate_nhblack:fer_rate_otherraceeth, pop_age1524:pop_age3544 ) |>
   mutate(norm_total_births = round(norm_total_births, 0),
          region = case_when(
@@ -141,7 +140,7 @@ births_deaths <- fertility_mortality %>%
            TRUE ~ "missing"
          ))
 
-births_deaths <- births_deaths %>% 
+births_deaths <- births_deaths |> 
   left_join(median_income, by = c("state", "year"))
 
 # separate population to not doublecount
@@ -159,10 +158,10 @@ fertility_rates <- fertility_mortality |> select(year,matches("births_age[0-9]")
   mutate(tfr = (fert_age1524+fert_age2534+fert_age3544) * 10 /1000,
          gen_fr = ((births_age1524+births_age2534+births_age3544)/(pop_age1524 + pop_age2534 + pop_age3544))  * 1000)
 
-fertility_rates <- fertility_rates %>% # selecting columns
+fertility_rates <- fertility_rates |> # selecting columns
   select(year, tfr, gen_fr )
 
-births_deaths <- births_deaths %>% 
+births_deaths <- births_deaths |> 
   left_join(fertility_rates, by = "year")
 ```
 
@@ -277,9 +276,10 @@ How do educational, and regional factors influence birth rates and infant mortal
 
 As politicians continue to attack the Department of Education, propose cuts on SNAP benefits, and limit access to reproductive healthcare, we are wondering if this will affect future population growth.
 
-A satisfactory answer is one in which we find variables that can explain, or at least influence, fertility and infant mortality data for  state and region.
+A satisfactory answer is one in which we identify variables that explain or at least influence fertility and infant mortality data for state and regional levels.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#drops columns
 drop_cols <- c("one_race","two_race","three_race","four_race","total_num_races")
 
 pop_2016m1 <- pop_2016
@@ -342,7 +342,6 @@ main_pop3 <- main_pop2 |>
 main_pop4 <- main_pop3 |> select(-c(total_male_pop,total_fem_pop)) |> 
   left_join(TFR_USstyr, by = c("state", "year")) |>
   left_join(infantMort1, by = c("state", "year"))
-
 ```
 
 # Exploratory Data Analysis (EDA)
@@ -403,7 +402,8 @@ inf_fer_rates_main <- inf_fer_rates1 |>
 
 inf_fer_rates_main |> ggplot(aes(y=InfantMortality, x=FertilityRate, col=ethnicity)) +
   geom_point() +
-  facet_wrap(vars(region))
+  facet_wrap(vars(region)) +
+  labs(title = "Infant Mortality and Fertility Rate")
 
 ```
 
@@ -416,6 +416,34 @@ For Non-Hispanic Black populations, the relationship between fertility rates and
 Finally, among Hispanic populations, there is a trend of higher fertility rates, especially in the Midwest, Northeast, and Southeast regions. Interestingly, Hispanic groups also tend to have lower infant mortality rates compared to other ethnicities in all regions except for Southwest.
 
 It should be noted that coloring and filtering by year did not yield a noticeable difference in the structure of each ethnicity.
+
+## Educational Attainment Per Region
+
+```{r, cache=TRUE, echo=FALSE, message=FALSE, warning=FALSE}
+edu <- main_pop4 |>
+  mutate(region = case_when( 
+           state %in% c("California", "Oregon", "Washington", "Idaho", "Nevada", "Utah", "Colorado", "Montana", "Wyoming", "Hawaii", "Alaska") ~ "West",
+           state %in% c("Arizona", "New Mexico", "Texas", "Oklahoma") ~ "Southwest",
+           state %in% c("Kansas", "Nebraska", "South Dakota", "North Dakota", "Missouri", "Iowa", "Minnesota", "Illinois", "Wisconsin", "Indiana", "Ohio", "Michigan") ~ "Midwest",
+           state %in% c("Arkansas", "Louisiana", "Mississippi", "Alabama", "Tennessee", "Georgia", "Florida", "South Carolina", "North Carolina", "Kentucky", "Virginia", "West Virginia", "Delaware", "District of Columbia") ~ "Southeast",
+           state %in% c("New Jersey", "Pennsylvania", "Maryland", "Connecticut", "Rhode Island", "Massachusetts", "Vermont", "New Hampshire", "Maine", "New York") ~ "Northeast",
+           TRUE ~ "missing")) |>
+select(state, region, year, edu_less_hs, edu_hs, edu_somecoll, edu_bach, edu_grad, income_median) |>
+  pivot_longer(cols = starts_with("edu"),
+               names_to = "edu_level",
+               values_to = "edu_prop")
+
+edu_median <- edu |>
+  select(region, edu_level, year, income_median, edu_prop) |>
+  group_by(region, edu_level) |>
+  summarise(median_edu_prop = median(edu_prop))
+
+ggplot(edu_median, aes(x = region, y = median_edu_prop, color = edu_level, group = edu_level)) + 
+  geom_point() + geom_line() + labs(x = "Region", y = "Median Proportion of Education Attainment",
+                                    title = "Educational Attainment Per Region")
+```
+
+The graph shows that the Southwest region has the highest proportion of individuals with less than a high school education. The Southeast has the highest proportion of individuals whose highest attainment is a high school degree. The West region leads in having the highest proportion of individuals with some college education, while the Northeast has the highest proportion of individuals with a bachelor's and graduate degrees.
 
 ## Correlation Matrix
 
@@ -450,6 +478,10 @@ We are going to identify the most significant patterns in the data while minimiz
 
 To determine the optimal number of components, we plotted the proportion of variance explained and the cumulative variance. From the visuals, we identified that five components capture about 80% of the total variance.
 
+## Examining Loadings
+
+Next, we will identify the variables that contribute the most to each principal component by examing their positive and negative weights. This will help us discover patterns.
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 no_state <- main_pop4 |>
   select(-c("state", starts_with("pop_age"), starts_with("ms_"),year)) 
@@ -465,32 +497,6 @@ pca_var_explained <- data.frame(
 pca_var_explained <- pca_var_explained %>% 
   mutate(Cumulative_variance_explained = cumsum(Proportion_of_variance_explained))
 
-var_explained_plot <- ggplot(pca_var_explained, aes(x = Component)) +
-  
-  # Proportion of variance explained (green line & points)
-  geom_line(aes(y = Proportion_of_variance_explained, color = "Proportion of variance explained"), size = 1) +
-  geom_point(aes(y = Proportion_of_variance_explained, color = "Proportion of variance explained"), size = 2) +
-  
-  # Cumulative variance explained (blue line & points)
-  geom_line(aes(y = Cumulative_variance_explained, color = "Cumulative variance explained"), size = 1) +
-  geom_point(aes(y = Cumulative_variance_explained, color = "Cumulative variance explained"), size = 2) +
-  
-  # Custom colors for lines
-  scale_color_manual(values = c("Proportion of variance explained" = "#57A44C", 
-                                "Cumulative variance explained" = "#5276A7")) +
-  
-  # Axis labels and theme adjustments
-  labs(x = "Component", y = "Variance Explained", color = "Legend") +
-  theme_minimal()
-print(var_explained_plot)
-
-```
-
-## Examining Loadings
-
-Next, we will identify the variables that contribute the most to each principal component by examing their positive and negative weights. This will help us discover patterns.
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
 num_pc <- 5
 loading_df <- pca$rotation[, 1:num_pc]
 loading_plot_df <- loading_df %>% 
@@ -498,7 +504,7 @@ loading_plot_df <- loading_df %>%
   tibble::rownames_to_column(var = "Variable") %>% 
   pivot_longer(cols = -Variable, names_to = "Principal_Component",
                values_to = "Loading")
-loading_plot_df <- loading_plot_df %>% 
+loading_plot_df <- loading_plot_df |> 
   mutate(zero = 0)
 
 loadings_plot <- ggplot(loading_plot_df, aes(x = Loading, y = Variable, color = Principal_Component)) +
@@ -525,11 +531,10 @@ The variables that are most influential for PC4 are `hc_nohc`, `SNAP`, `hc_priva
 
 [Name for PC5:]{.underline} *"Education Attain and Fertility Rate"*
 
-The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. States with high PC5 scores indicates a higher proportion of residents who only attained some college education. In contrast, states with low PC5 scores have a higher than average proportion of individuals with only a high school degree or graduate degree and higher total fertility rate. 
-
+The variables that are most influential for PC5 are `edu_somecoll`, `edu_hs`, `total_fer`, and `edu_grad`. States with high PC5 scores indicates a higher proportion of residents who only attained some college education. In contrast, states with low PC5 scores have a higher than average proportion of individuals with only a high school degree or graduate degree and higher total fertility rate.
 
 In the scope of our project, we are going to pick the variables that are the most correlated to total fertility and infant mortality rates. These variables are education attainment, economic indicators, and health coverage. These variables align with social, economic, and healthcare conditions.
-  
+
 Overall, it seems that educational attainment explained a lot of the variation in our data.
 
 # Linear Regression
@@ -539,16 +544,16 @@ In this part, we'll use linear regression to see which predictors are significan
 $$
 \text{total\_fer} = \beta_0 + 
 \underbrace{\beta_1 \text{less hs}_i + \cdots + \beta_5 \text{grad}_i}_{\text{education attainment}} + 
-\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} + 
-\underbrace{\beta_8 \text{private}_i + \cdots + \beta_{10} \text{no coverage}_i}_{\text{health coverage}} \\ + 
+\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} \\ + 
+\underbrace{\beta_8 \text{private}_i + \cdots + \beta_{10} \text{no coverage}_i}_{\text{health coverage}}  + 
  \epsilon_i
 $$
 
 $$
 \text{total\_mort} = \beta_0 + 
 \underbrace{\beta_1 \text{less hs}_i + \cdots + \beta_5 \text{grad}_i}_{\text{education attainment}} + 
-\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} + 
-\underbrace{\beta_8 \text{private}_i + \cdots + \beta_{10} \text{no coverage}_i}_{\text{health coverage}} \\ + 
+\underbrace{\beta_6 \text{income\_median}_i + \beta_7 \text{SNAP}_i}_{\text{economic indicators}} \\ + 
+\underbrace{\beta_8 \text{private}_i + \cdots + \beta_{10} \text{no coverage}_i}_{\text{health coverage}} + 
  \epsilon_i
 $$
 
@@ -622,7 +627,8 @@ lin_reg23_mor <- lm(total_mort ~ edu_less_hs + edu_hs + edu_somecoll + edu_bach 
 # summary(lin_reg23_mor)
 ```
 
-```{r}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#creating fertility_table
 fertility_table <- data.frame(
   Year = c(2016, 2017, 2018, 2019, 2021, 2022, 2023),
   Bachelor = c(-4.093e+00, -4.566e+00, -3.589e+00, -4.203e+00, -4.034e+00, -3.595e+00, -3.887e+00),
@@ -630,6 +636,7 @@ fertility_table <- data.frame(
   `Public Healthcare` = c(-3.869e+00, -3.913e+00, -3.154e+00, -2.858e+00, -2.441e+00, NA, NA)
 )
 
+#creating mortality table
 mortality_table <- data.frame(
   Year = c(2016, 2017, 2018, 2019, 2021, 2022, 2023),
   Bachelor = c(-9.274e+01 , -8.553e+01 , -6.304e+01, -6.309e+01, -6.566e+01, -6.537e+01, -6.243e+01  ),
@@ -649,28 +656,36 @@ mortality_table <- data.frame(
 
 # mortality_kable
 
+#creating table with gt
 fertility_table |>
-  gt()
+  gt() |>
+  tab_header(
+    title = "Total Fertility Rate Analysis (Estimates)"
+  )
 
+#creating table with gt
 mortality_table |>
-  gt()
+  gt() |>
+  tab_header(
+    title = "Total Infant Mortality Rate Analysis (Estimates)"
+  )
 ```
 
 **Note: NA indicates not significant**
 
 Running the linear regression for each year in 2016 to 2023 (not including 2020) for total fertility rate, revealed that education attainment, particularly bachelor's and graduate degrees, was consistently significant and negatively associated with fertility rates. This indicates that a higher proportion of individuals with a bachelor's or graduate degree is associated with lower fertility rates. This may suggest adults are delaying traditional markers of adulthood such as securing a job, getting married, and having children. As a result, adults are having children later in life, which means having fewer due to reproductive health considerations. The magnitude of the negative effect for bachelor's seems to vary slightly each year, with the strongest negative effect in 2017 and a slightly weaker effect in 2021. In contrast, graduate degrees had the strongest negative effect in 2023 and a weaker effect in 2017.
 
-Public health insurance also had a significant negative association with fertility rates from 2016 to 2021. States with higher proportions of individuals with public health insurance tend to have lower fertility rates. Public health's strongest negative effect occurred in 2016 and 2017, and dropped significantly in 2022, indicating it might be more muted over the years. 
+Public health insurance also had a significant negative association with fertility rates from 2016 to 2021. States with higher proportions of individuals with public health insurance tend to have lower fertility rates. Public health's strongest negative effect occurred in 2016 and 2017, and dropped significantly in 2022, indicating it might be more muted over the years.
 
 For total infant mortality rate, a similar pattern was observed, with bachelor's showing a consistently negative significance from 2016 to 2023. Graduate degree had a significant negative effect between 2018 to 2022. The strongest negative effect for bachelor's education was in 2016, and gradually decreases, reaching its lowest effect in 2023. However for graduate's education, the strongest negative effect occurred in 2022.
 
-Income median was also statistically significant for total infant mortality, but is approximately 0, making no impact on infant mortality rates. 
+Income median was also statistically significant for total infant mortality, but is approximately 0, making no impact on infant mortality rates.
 
 In conclusion educational attainment is significant to both total fertility and infant mortality rate, with health insurance also playing a role in fertility rates.
 
-
-
 ## Education Gap
+
+As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher than average total mortality rates per 1,000 live births. In contrast, states in the Northeast, which have a higher proportion of highly educated residents (despite the educational gap being negative), tend to show lower than average total mortality rates. While educational attainment was found to be a statistically significant predictor of total fertility rate, its effect remains inconclusive when analyzed at the region and state levels.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.show='hold'}
 # create two tables where edu_somcoll is grouped with _hs, _less_hs and another table with _bach and _grad grouped.
@@ -728,7 +743,7 @@ top_gaps <- main_popEDU |> # renaming for cleaner table
   head() |>
   gt() |>
   tab_header(
-    title = "Sorted by Educational Attainment Gap"
+    title = "Highest Educational Attainment Gap"
   ) |>
   cols_label(
     state = "State",
@@ -742,8 +757,6 @@ top_gaps <- main_popEDU |> # renaming for cleaner table
     hc_nohc = "No H. Ins."
   ) #|>
   #fmt_number(columns = income_median, suffixing = TRUE) 
-
-top_gaps
 
 bottom_gaps <- main_popEDU |> # renaming for cleaner tables
   select(state, region, total_fer, total_mort, edu_gap, hc_private, hc_public, hc_nohc) |>
@@ -768,7 +781,7 @@ bottom_gaps <- main_popEDU |> # renaming for cleaner tables
   tail(, 7) |>
   gt() |>
   tab_header(
-    title = "Sorted by Educational Attainment Gap"
+    title = "Lowest Educational Attainment Gap"
   ) |>
   cols_label(
     state = "State",
@@ -783,6 +796,10 @@ bottom_gaps <- main_popEDU |> # renaming for cleaner tables
   ) #|>
   #fmt_number(columns = income_median, suffixing = TRUE)
 
+#printing top gaps
+top_gaps
+
+#printing bottom gaps
 bottom_gaps
 
 # merging to get region average for each variable of significance
@@ -826,18 +843,15 @@ bottom_gaps
 #   )
 ```
 
-As observed in our initial exploration, states in the Southeast region, which have a lower proportion of highly educated residents, tend to exhibit higher average total mortality rates per 100 live births. In contrast, states in the Northeast, which have a higher population of highly educated residents (though the educational gap remains negative), tend to show lower average total mortality rates. While we did find educational attainment to be statistically significant in total fertility rate, it is inconclusive at the region and state level.
-
 # Conclusion
 
 Fertility and infant mortality rates play a huge role in population growth and are key indicators of a country's overall health, reflecting the social, economic, and healthcare conditions. As we move toward the future, we question how major conflicts will impact our population. In this project, we explored fertility and infant mortality rates across U.S. states using various methods.
 
-We identified trends across ethnic groups and found that Non-Hispanic White populations had the highest variation in infant mortality. In addition, we analyzed the relationships between total fertility (TFR) and infant mortality rates (IMR) with predictors such as age groups, marital status, economic indicators, and health coverage. PCA emphasized education attainment and healthcare coverage as the most significant predictors, which we tested using linear regression for both TFR and IMR. Using linear regression, it revealed the change of estimates of significant predictors over time. Given the importance of educational attainment, we examined the education gaps between higher education (graduate and above) and lower education (bachelors and below). We also used a table to examine trends in healthcare coverage categories.
+We identified trends across ethnic groups and found that Non-Hispanic White populations had the highest variation in infant mortality. The South region had a higher proportion of individuals with a high school degree or less, the West led in some college education, and the Northeast region had the highest proportion of bachelor's and graduate degree holders. In addition, we analyzed the relationships between total fertility (TFR) and infant mortality rates (IMR) with predictors such as age groups, marital status, economic indicators, and health coverage. PCA emphasized education attainment and healthcare coverage as the most significant predictors, which we tested using linear regression for both TFR and IMR. Using linear regression, it revealed the change of estimates of significant predictors over time. Given the importance of educational attainment, we examined the education gaps between higher education (graduate and above) and lower education (bachelors and below). We also used a table to examine trends in healthcare coverage categories.
 
-Throughout our analysis, we encountered challenges with missing or omitted data, particularly for ethnic groups other than Non-Hispanic White. This resulted in occurrences where our techniques failed to identify statistical significance or produced missing values (NAs). Additionally, attempts to run state-level linear regression per year produced NA values due to having more predictors than observations. 
+Throughout our analysis, we encountered challenges with missing or omitted data, particularly for ethnic groups other than Non-Hispanic White. This resulted in occurrences where our techniques failed to identify statistical significance or produced missing values (NAs). Additionally, attempts to run state-level linear regression per year produced NA values due to having more predictors than observations.
 
 For future research, we would like to obtain county-level data to better assess maternal and infant health disparities in the United States. It would also be very interesting to see if voting patterns are correlated with educational gaps for each state and county levels.
-  
 
 # Sources
 
@@ -884,7 +898,7 @@ Note: `fert_age1524` and below were created.
 ## Census Dataset
 
 | Variable Name | Meaning (Proportional Total Population by State and Year) |
-|------------------------|------------------------------------------------|
+|------------------------|-----------------------------------------------|
 | `pop_age517` | Population aged 5-17 (women age 5-54 population). |
 | `pop_age2534` | Population aged 25-34 (women age 5-54 population). |
 | `pop_age3544` | Population aged 35-44 (women age 5-54 population). |
@@ -903,3 +917,27 @@ Note: `fert_age1524` and below were created.
 | `hc_private` | Health Coverage: individuals with private insurance. |
 | `hc_public` | Health Coverage: individuals with public insurance. |
 | `hc_nohc` | Health Coverage: individuals with no health insurance. |
+
+## Number of Components
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+var_explained_plot <- ggplot(pca_var_explained, aes(x = Component)) +
+  
+  # Proportion of variance explained (green line & points)
+  geom_line(aes(y = Proportion_of_variance_explained, color = "Proportion of variance explained"), size = 1) +
+  geom_point(aes(y = Proportion_of_variance_explained, color = "Proportion of variance explained"), size = 2) +
+  
+  # Cumulative variance explained (blue line & points)
+  geom_line(aes(y = Cumulative_variance_explained, color = "Cumulative variance explained"), size = 1) +
+  geom_point(aes(y = Cumulative_variance_explained, color = "Cumulative variance explained"), size = 2) +
+  
+  # Custom colors for lines
+  scale_color_manual(values = c("Proportion of variance explained" = "#57A44C", 
+                                "Cumulative variance explained" = "#5276A7")) +
+  
+  # Axis labels and theme adjustments
+  labs(x = "Component", y = "Variance Explained", color = "Legend") +
+  theme_minimal()
+print(var_explained_plot)
+```
